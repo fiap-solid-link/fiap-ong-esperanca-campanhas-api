@@ -14,7 +14,11 @@ public class Campanha
     public StatusCampanha Status { get; private set; }
 
     // Construtor vazio exigido pelo Entity Framework Core
-    protected Campanha() { }
+    protected Campanha()
+    {
+        Titulo = null!;
+        Descricao = null!;
+    }
 
     public Campanha(string titulo, string descricao, DateTime dataInicio, DateTime dataFim, decimal metaFinanceira)
     {
