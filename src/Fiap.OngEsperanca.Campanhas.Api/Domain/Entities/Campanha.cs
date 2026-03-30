@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Fiap.OngEsperanca.Campanhas.Api.Domain.Exceptions;
+using System;
 
 namespace Fiap.OngEsperanca.Campanhas.Api.Domain.Entities;
 
@@ -24,10 +25,10 @@ public class Campanha
     {
         // Regras de negócio obrigatórias
         if (dataFim < DateTime.UtcNow)
-            throw new ArgumentException("A data de término não pode estar no passado.");
+            throw new DomainException("A data de término não pode estar no passado.");
 
         if (metaFinanceira <= 0)
-            throw new ArgumentException("A meta financeira deve ser maior que zero.");
+            throw new DomainException("A meta financeira deve ser maior que zero.");
 
         Id = Guid.NewGuid();
         Titulo = titulo;
