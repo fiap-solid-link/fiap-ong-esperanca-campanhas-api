@@ -1,5 +1,9 @@
 ﻿using Fiap.OngEsperanca.Campanhas.Api.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using Fiap.OngEsperanca.Campanhas.Api.Domain.Repositories;
+using Fiap.OngEsperanca.Campanhas.Api.Infrastructure.Persistence.Relational.Repositories;
+using FluentValidation;
+using System.Reflection;
 
 namespace Fiap.OngEsperanca.Campanhas.Api.Infrastructure.Persistence.Relational;
 
