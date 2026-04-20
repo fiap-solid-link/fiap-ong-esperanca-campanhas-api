@@ -4,6 +4,10 @@ using Fiap.OngEsperanca.Campanhas.Api.Infrastructure.Persistence.Relational.Repo
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,6 +24,24 @@ builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(Assembly.Get
 // 4. Registrando o FluentValidation
 builder.Services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
 
+// --- INÍCIO DA CONFIGURAÇÃO DE AUTENTICAÇÃO JWT ---
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:SecretKey"]!))
+        };
+    });
+// --- FIM DA CONFIGURAÇÃO DE AUTENTICAÇÃO JWT ---
+
 // 5. SERVIÇOS DE API E CONTROLLERS (A mágica pro Swagger achar a rota!)
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -35,6 +57,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseAuthentication(); // 1º Pergunta "Quem é você?"
+app.UseAuthorization();  // 2º Pergunta "Você tem permissão de GestorONG?"
 
 // 6. MAPEANDO OS CONTROLLERS (O Comando que estava faltando!)
 app.MapControllers();
