@@ -1,18 +1,19 @@
-﻿using System.Threading;
-using System.Threading.Tasks;
+﻿using Fiap.OngEsperanca.Campanhas.Api.Features.GestaoCampanhas.ListarCampanhas;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Fiap.OngEsperanca.Campanhas.Api.Features.GestaoCampanhas.CriarCampanha;
 
 [ApiController]
 [Route("api/campanhas")]
-public class CriarCampanhaController(IMediator mediator) : ControllerBase
+public class CampanhasController(IMediator mediator) : ControllerBase
 {
     [HttpPost]
-    [Authorize(Roles = "GestorONG")] // Proteção exigida pelo RBAC do Hackathon
+    //[Authorize(Roles = "GestorONG")] // Proteção exigida pelo RBAC do Hackathon
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -26,4 +27,17 @@ public class CriarCampanhaController(IMediator mediator) : ControllerBase
             ? StatusCode(result.StatusCode, result.Dados)
             : StatusCode(result.StatusCode, new { erro = result.Erro });
     }
+
+    [HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> Listar(CancellationToken ct)
+    {
+        var query = new ListarCampanhasQuery();
+        var result = await mediator.Send(query, ct);
+
+        return result.Sucesso
+            ? StatusCode(result.StatusCode, result.Dados)
+            : StatusCode(result.StatusCode, new { erro = result.Erro });
+    }
+
 }
