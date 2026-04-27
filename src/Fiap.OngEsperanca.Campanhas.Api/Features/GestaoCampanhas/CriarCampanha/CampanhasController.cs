@@ -1,4 +1,5 @@
-﻿using Fiap.OngEsperanca.Campanhas.Api.Features.GestaoCampanhas.CancelarCampanha;
+﻿using Fiap.OngEsperanca.Campanhas.Api.Features.Doacoes.EnviarIntencao;
+using Fiap.OngEsperanca.Campanhas.Api.Features.GestaoCampanhas.CancelarCampanha;
 using Fiap.OngEsperanca.Campanhas.Api.Features.GestaoCampanhas.ListarCampanhas;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -52,6 +53,22 @@ public class CampanhasController(IMediator mediator) : ControllerBase
 
         return result.Sucesso
             ? StatusCode(result.StatusCode, new { mensagem = result.Dados })
+            : StatusCode(result.StatusCode, new { erro = result.Erro });
+    }
+
+    [HttpPost("{id:guid}/doacoes")]
+    [ProducesResponseType(StatusCodes.Status202Accepted)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> Doar(Guid id, [FromBody] EnviarIntencaoDoacaoCommand command, CancellationToken ct)
+    {
+        // Garante que o ID da campanha na URL é o mesmo que vai pro Handler
+        var comandoAtualizado = command with { CampanhaId = id };
+
+        var result = await mediator.Send(comandoAtualizado, ct);
+
+        return result.Sucesso
+            ? StatusCode(202, new { mensagem = result.Dados })
             : StatusCode(result.StatusCode, new { erro = result.Erro });
     }
 

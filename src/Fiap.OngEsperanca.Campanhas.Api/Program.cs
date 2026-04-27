@@ -1,11 +1,13 @@
 using Fiap.OngEsperanca.Campanhas.Api.Domain.Repositories;
+using Fiap.OngEsperanca.Campanhas.Api.Domain.Services;
+using Fiap.OngEsperanca.Campanhas.Api.Infrastructure.Mensageria;
 using Fiap.OngEsperanca.Campanhas.Api.Infrastructure.Persistence.Relational;
 using Fiap.OngEsperanca.Campanhas.Api.Infrastructure.Persistence.Relational.Repositories;
 using FluentValidation;
-using Microsoft.EntityFrameworkCore;
-using System.Reflection;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using System.Reflection;
 using System.Text;
 
 
@@ -17,6 +19,8 @@ builder.Services.AddDbContext<CampanhasDbContext>(options =>
 
 // 2. Registrando os Repositórios
 builder.Services.AddScoped<ICampanhaRepository, CampanhaRepository>();
+// Registrando o nosso mensageiro Fake
+builder.Services.AddScoped<IMessageBusService, FakeMessageBusService>();
 
 // 3. Registrando o MediatR (procura automaticamente os Handlers)
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
