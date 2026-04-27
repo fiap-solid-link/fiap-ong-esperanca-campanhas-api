@@ -1,6 +1,7 @@
 ﻿using Fiap.OngEsperanca.Campanhas.Api.Domain.Exceptions;
 using System;
 
+
 namespace Fiap.OngEsperanca.Campanhas.Api.Domain.Entities;
 
 public class Campanha
@@ -50,6 +51,16 @@ public class Campanha
             ValorTotalArrecadado += valor;
         }
     }
+
+    // Método de negócio para cancelar a campanha
+    public void Cancelar()
+    {
+        if (Status != StatusCampanha.Ativa)
+            throw new DomainException("Apenas campanhas ativas podem ser canceladas.");
+
+        Status = StatusCampanha.Cancelada;
+    }
+
 }
 
 public enum StatusCampanha
@@ -58,3 +69,4 @@ public enum StatusCampanha
     Concluida,
     Cancelada
 }
+

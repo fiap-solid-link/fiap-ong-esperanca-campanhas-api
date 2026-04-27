@@ -1,4 +1,5 @@
-﻿using Fiap.OngEsperanca.Campanhas.Api.Features.GestaoCampanhas.ListarCampanhas;
+﻿using Fiap.OngEsperanca.Campanhas.Api.Features.GestaoCampanhas.CancelarCampanha;
+using Fiap.OngEsperanca.Campanhas.Api.Features.GestaoCampanhas.ListarCampanhas;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -37,6 +38,20 @@ public class CampanhasController(IMediator mediator) : ControllerBase
 
         return result.Sucesso
             ? StatusCode(result.StatusCode, result.Dados)
+            : StatusCode(result.StatusCode, new { erro = result.Erro });
+    }
+
+    [HttpPatch("{id:guid}/cancelar")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> Cancelar(Guid id, CancellationToken ct)
+    {
+        var command = new CancelarCampanhaCommand(id);
+        var result = await mediator.Send(command, ct);
+
+        return result.Sucesso
+            ? StatusCode(result.StatusCode, new { mensagem = result.Dados })
             : StatusCode(result.StatusCode, new { erro = result.Erro });
     }
 
