@@ -10,19 +10,17 @@ using Microsoft.IdentityModel.Tokens;
 using System.Reflection;
 using System.Text;
 
-
 var builder = WebApplication.CreateBuilder(args);
 
 // 1. Configurando a injeção do DbContext (PostgreSQL)
 builder.Services.AddDbContext<CampanhasDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("CampanhasDb")));
 
-// 2. Registrando os Repositórios
+// 2. Registrando os Repositórios e Mensageria
 builder.Services.AddScoped<ICampanhaRepository, CampanhaRepository>();
-// Sai o Fake, entra o RabbitMQ Real!
 builder.Services.AddScoped<IMessageBusService, RabbitMqService>();
 
-// 3. Registrando o MediatR (procura automaticamente os Handlers)
+// 3. Registrando o MediatR
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
 
 // 4. Registrando o FluentValidation
@@ -44,16 +42,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 Encoding.UTF8.GetBytes(builder.Configuration["Jwt:SecretKey"]!))
         };
     });
-// --- FIM DA CONFIGURAÇÃO DE AUTENTICAÇÃO JWT ---
 
-// 5. SERVIÇOS DE API E CONTROLLERS (A mágica pro Swagger achar a rota!)
+// 5. SERVIÇOS DE API E CONTROLLERS
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Configuração do Pipeline HTTP
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -61,13 +57,11 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseAuthentication(); // 1º Pergunta "Quem é você?"
-app.UseAuthorization();  // 2º Pergunta "Você tem permissão de GestorONG?"
+app.UseAuthentication();
+app.UseAuthorization();
 
-// 6. MAPEANDO OS CONTROLLERS (O Comando que estava faltando!)
+// 6. MAPEANDO OS CONTROLLERS
 app.MapControllers();
-
-// Rota de Health Check
 app.MapGet("/health", () => Results.Ok(new { Status = "Healthy", Service = "Campanhas API" }));
 
 app.Run();
