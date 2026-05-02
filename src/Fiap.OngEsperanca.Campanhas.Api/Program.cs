@@ -19,8 +19,8 @@ builder.Services.AddDbContext<CampanhasDbContext>(options =>
 
 // 2. Registrando os Repositórios
 builder.Services.AddScoped<ICampanhaRepository, CampanhaRepository>();
-// Registrando o nosso mensageiro Fake
-builder.Services.AddScoped<IMessageBusService, FakeMessageBusService>();
+// Sai o Fake, entra o RabbitMQ Real!
+builder.Services.AddScoped<IMessageBusService, RabbitMqService>();
 
 // 3. Registrando o MediatR (procura automaticamente os Handlers)
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));

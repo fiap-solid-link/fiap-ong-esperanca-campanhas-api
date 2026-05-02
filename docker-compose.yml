@@ -16,5 +16,12 @@ services:
       timeout: 5s
       retries: 5
 
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: esperanca-rabbitmq
+    ports:
+      - "5672:5672"   # Porta onde a API envia as mensagens
+      - "15672:15672" # Porta do painel visual no navegador
+
 volumes:
   postgres_campanhas_data:
