@@ -1,6 +1,9 @@
 ﻿using Fiap.OngEsperanca.Campanhas.Api._Shared.Results;
+using Fiap.OngEsperanca.Campanhas.Api.Domain.Entities;
 using Fiap.OngEsperanca.Campanhas.Api.Features.Doacoes.EnviarIntencao;
+using Fiap.OngEsperanca.Campanhas.Api.Features.GestaoCampanhas.CancelarCampanha;
 using Fiap.OngEsperanca.Campanhas.Api.Features.GestaoCampanhas.CriarCampanha;
+using Fiap.OngEsperanca.Campanhas.Api.Features.GestaoCampanhas.ListarCampanhas;
 using FluentAssertions;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -48,4 +51,149 @@ public class CampanhasControllerTests
         // Garantimos que o Controller repassou a bola para o MediatR exatamente 1 vez
         _mediatorMock.Verify(m => m.Send(It.IsAny<EnviarIntencaoDoacaoCommand>(), It.IsAny<CancellationToken>()), Times.Once);
     }
+
+    // --- TESTE 2: CRIAR CAMPANHA ---
+    [Fact(DisplayName = "Deve retornar HTTP 201 (Created) ao criar campanha com sucesso")]
+    public async Task Criar_QuandoSucesso_DeveRetornarCreated()
+    {
+        // Arrange
+        var comando = new CriarCampanhaCommand(
+            "Campanha de Teste",
+            "Descrição Teste",
+            DateTime.UtcNow,
+            DateTime.UtcNow.AddDays(30),
+            5000m);
+
+        var responseEsperado = new CriarCampanhaResponse(Guid.NewGuid(), "Campanha de Teste");
+
+        // Simulamos o MediatR retornando o Result.Created (Status 201) que o seu Handler produz
+        var resultadoSucesso = Result<CriarCampanhaResponse>.Created(responseEsperado);
+
+        _mediatorMock.Setup(m => m.Send(comando, It.IsAny<CancellationToken>()))
+                     .ReturnsAsync(resultadoSucesso);
+
+        // Act
+        var resultado = await _controller.Criar(comando, CancellationToken.None);
+
+        // Assert
+        var objectResult = resultado.Should().BeOfType<ObjectResult>().Subject;
+
+        // Verifica se o Controller pegou o Status 201 do Result e aplicou no HTTP
+        objectResult.StatusCode.Should().Be(201);
+
+        // Verifica se o Controller devolveu o DTO "CriarCampanhaResponse" corretamente
+        objectResult.Value.Should().BeEquivalentTo(responseEsperado);
+    }
+
+    // --- TESTE 3: LISTAR CAMPANHAS ---
+    [Fact(DisplayName = "Deve retornar HTTP 200 (OK) com a lista de campanhas")]
+    public async Task Listar_QuandoSucesso_DeveRetornarOkComLista()
+    {
+        // Arrange
+        var query = new ListarCampanhasQuery();
+
+        // Criamos uma lista fake com 1 campanha para o teste
+        var listaFake = new List<CampanhaResponse>
+        {
+            new CampanhaResponse(Guid.NewGuid(), "Campanha 1", "Desc", 1000m, 150m, StatusCampanha.Ativa)
+        };
+
+        // O MediatR vai devolver o Result de sucesso contendo a nossa lista
+        var resultadoSucesso = Result<IEnumerable<CampanhaResponse>>.Ok(listaFake);
+
+        _mediatorMock.Setup(m => m.Send(It.IsAny<ListarCampanhasQuery>(), It.IsAny<CancellationToken>()))
+                     .ReturnsAsync(resultadoSucesso);
+
+        // Act
+        var resultado = await _controller.Listar(CancellationToken.None);
+
+        // Assert
+        var objectResult = resultado.Should().BeOfType<ObjectResult>().Subject;
+
+        // Status 200 (OK) é o padrão do método Result.Ok()
+        objectResult.StatusCode.Should().Be(200);
+
+        // Garantimos que a lista devolvida no Value do ObjectResult é a mesma que mockamos
+        objectResult.Value.Should().BeEquivalentTo(listaFake);
+    }
+
+    // --- TESTE 4: CANCELAR CAMPANHA ---
+    [Fact(DisplayName = "Deve retornar HTTP 200 (OK) ao cancelar campanha com sucesso")]
+    public async Task Cancelar_QuandoSucesso_DeveRetornarOk()
+    {
+        // Arrange
+        var id = Guid.NewGuid();
+
+        // Simulamos a resposta de sucesso do Handler
+        var resultadoSucesso = Result<string>.Ok("Campanha cancelada com sucesso.");
+
+        // Ensinamos o MediatR a retornar sucesso quando receber um comando com esse ID específico
+        _mediatorMock.Setup(m => m.Send(It.Is<CancelarCampanhaCommand>(c => c.Id == id), It.IsAny<CancellationToken>()))
+                     .ReturnsAsync(resultadoSucesso);
+
+        // Act
+        var resultado = await _controller.Cancelar(id, CancellationToken.None);
+
+        // Assert
+        var objectResult = resultado.Should().BeOfType<ObjectResult>().Subject;
+
+        // O método Result.Ok() devolve 200 por padrão, e o Controller espelha isso
+        objectResult.StatusCode.Should().Be(200);
+
+        // Verificamos se o Controller realmente enviou o comando para o MediatR com o ID correto
+        _mediatorMock.Verify(m => m.Send(It.Is<CancelarCampanhaCommand>(c => c.Id == id), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    // ====================================================================
+    // --- TESTES DE CAMINHO TRISTE (SAD PATHS) ---
+    // ====================================================================
+
+    [Fact(DisplayName = "Doar: Deve retornar HTTP 404 (Not Found) quando campanha não existir")]
+    public async Task Doar_QuandoCampanhaNaoExiste_DeveRetornarNotFound()
+    {
+        // Arrange
+        var id = Guid.NewGuid();
+        var comando = new EnviarIntencaoDoacaoCommand(Guid.Empty, Guid.NewGuid(), 150m);
+
+        // Simulamos o Handler dizendo "Deu ruim, status 404"
+        var resultadoFalha = Result<string>.Fail("Campanha não encontrada.", 404);
+
+        _mediatorMock.Setup(m => m.Send(It.IsAny<EnviarIntencaoDoacaoCommand>(), It.IsAny<CancellationToken>()))
+                     .ReturnsAsync(resultadoFalha);
+
+        // Act
+        var resultado = await _controller.Doar(id, comando, CancellationToken.None);
+
+        // Assert
+        var objectResult = resultado.Should().BeOfType<ObjectResult>().Subject;
+
+        // Verifica se repassou o 404 corretamente
+        objectResult.StatusCode.Should().Be(404);
+
+        // Verifica se a estrutura do erro está no formato { erro = "mensagem" } que você definiu
+        objectResult.Value.Should().BeEquivalentTo(new { erro = "Campanha não encontrada." });
+    }
+
+    [Fact(DisplayName = "Cancelar: Deve retornar HTTP 400 (Bad Request) quando houver regra de negócio violada")]
+    public async Task Cancelar_QuandoFalhaDeNegocio_DeveRetornarBadRequest()
+    {
+        // Arrange
+        var id = Guid.NewGuid();
+
+        // Simulamos o Handler devolvendo um status 400 (ex: campanha já estava cancelada)
+        var resultadoFalha = Result<string>.Fail("Não é possível cancelar uma campanha já encerrada.", 400);
+
+        _mediatorMock.Setup(m => m.Send(It.Is<CancelarCampanhaCommand>(c => c.Id == id), It.IsAny<CancellationToken>()))
+                     .ReturnsAsync(resultadoFalha);
+
+        // Act
+        var resultado = await _controller.Cancelar(id, CancellationToken.None);
+
+        // Assert
+        var objectResult = resultado.Should().BeOfType<ObjectResult>().Subject;
+
+        objectResult.StatusCode.Should().Be(400);
+        objectResult.Value.Should().BeEquivalentTo(new { erro = "Não é possível cancelar uma campanha já encerrada." });
+    }
+
 }
