@@ -4,6 +4,7 @@ using Fiap.OngEsperanca.Campanhas.Api.Infrastructure.Mensageria;
 using Fiap.OngEsperanca.Campanhas.Api.Infrastructure.Mensageria.Consumers;
 using Fiap.OngEsperanca.Campanhas.Api.Infrastructure.Persistence.Relational;
 using Fiap.OngEsperanca.Campanhas.Api.Infrastructure.Persistence.Relational.Repositories;
+using Fiap.OngEsperanca.Campanhas.Api.Infrastructure.Schedules;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -15,6 +16,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Adicione a Fábrica de Conexões do RabbitMQ
 builder.Services.AddSingleton(new RabbitMQ.Client.ConnectionFactory { HostName = "localhost" });
+builder.Services.AddHostedService<CampanhaVencimentoScheduler>();
 
 // O seu consumer que já estava aí:
 builder.Services.AddHostedService<DoacaoProcessadaConsumer>();

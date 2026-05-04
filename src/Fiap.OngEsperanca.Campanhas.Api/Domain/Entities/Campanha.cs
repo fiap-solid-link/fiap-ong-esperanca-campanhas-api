@@ -100,6 +100,15 @@ public class Campanha
 
         Status = StatusCampanha.Cancelada;
     }
+    public void Encerrar()
+    {
+        // Regra de Negócio: Só podemos encerrar naturalmente o que está em andamento
+        if (Status != StatusCampanha.EmAndamento)
+            throw new DomainException("Apenas campanhas em andamento podem ser concluídas.");
+
+        Status = StatusCampanha.Concluida;
+    }
+
 }
 
 // Alinhado com o Bounded Context do projeto
