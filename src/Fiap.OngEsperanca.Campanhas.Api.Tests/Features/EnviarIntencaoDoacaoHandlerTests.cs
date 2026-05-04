@@ -23,14 +23,16 @@ public class EnviarIntencaoDoacaoHandlerTests
         _handler = new EnviarIntencaoDoacaoHandler(_campanhaRepositoryMock.Object, _messageBusServiceMock.Object);
     }
 
-    [Fact(DisplayName = "Deve publicar evento no RabbitMQ quando a campanha existir e estiver ativa")]
+    [Fact(DisplayName = "Deve publicar evento no RabbitMQ quando a campanha existir e estiver Em Andamento")]
     public async Task Handle_CampanhaValida_DevePublicarEvento()
     {
         // Arrange
         var comando = new EnviarIntencaoDoacaoCommand(Guid.NewGuid(), Guid.NewGuid(), 50m);
 
-        // CORREÇÃO: Adicionando as datas que o construtor exige
         var campanhaFake = new Campanha("Campanha Teste", "Descricao", DateTime.UtcNow, DateTime.UtcNow.AddDays(30), 1000m);
+
+        // MÁGICA AQUI: Mudamos o status da campanha para "EmAndamento" usando o método do Domínio!
+        campanhaFake.Ativar();
 
         _campanhaRepositoryMock.Setup(repo => repo.ObterPorIdAsync(comando.CampanhaId, It.IsAny<CancellationToken>()))
                                .ReturnsAsync(campanhaFake);
@@ -40,6 +42,9 @@ public class EnviarIntencaoDoacaoHandlerTests
 
         // Assert
         resultado.Should().NotBeNull();
+
+        // Se falhar aqui, o StatusCode não será 200/Sucesso. Isso ajuda a debugar futuros erros!
+        resultado.Sucesso.Should().BeTrue();
 
         _messageBusServiceMock.Verify(bus => bus.PublicarAsync(
             It.IsAny<DoacaoRecebidaEvent>(),

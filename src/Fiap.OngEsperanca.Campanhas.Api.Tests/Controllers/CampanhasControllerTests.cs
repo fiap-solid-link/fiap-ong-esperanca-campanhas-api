@@ -4,6 +4,9 @@ using Fiap.OngEsperanca.Campanhas.Api.Features.Doacoes.EnviarIntencao;
 using Fiap.OngEsperanca.Campanhas.Api.Features.GestaoCampanhas.CancelarCampanha;
 using Fiap.OngEsperanca.Campanhas.Api.Features.GestaoCampanhas.CriarCampanha;
 using Fiap.OngEsperanca.Campanhas.Api.Features.GestaoCampanhas.ListarCampanhas;
+using Fiap.OngEsperanca.Campanhas.Api.Features.GestaoCampanhas.AtivarCampanha;
+using Fiap.OngEsperanca.Campanhas.Api.Features.GestaoCampanhas.EditarCampanha;
+using Fiap.OngEsperanca.Campanhas.Api.Features.GestaoCampanhas.ProrrogarCampanha;
 using FluentAssertions;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -195,5 +198,69 @@ public class CampanhasControllerTests
         objectResult.StatusCode.Should().Be(400);
         objectResult.Value.Should().BeEquivalentTo(new { erro = "Não é possível cancelar uma campanha já encerrada." });
     }
+
+    // ====================================================================
+    // --- TESTES DE CICLO DE VIDA (EDITAR, ATIVAR E PRORROGAR) ---
+    // ====================================================================
+
+    [Fact(DisplayName = "Editar: Deve retornar HTTP 200 (OK) ao editar campanha com sucesso")]
+    public async Task Editar_QuandoSucesso_DeveRetornarOk()
+    {
+        // Arrange
+        var id = Guid.NewGuid();
+        var command = new EditarCampanhaCommand(id, "Novo Título", "Nova Descrição", 2000m);
+        var resultadoSucesso = Result<string>.Ok("Campanha editada com sucesso.");
+
+        _mediatorMock.Setup(m => m.Send(It.IsAny<EditarCampanhaCommand>(), It.IsAny<CancellationToken>()))
+                     .ReturnsAsync(resultadoSucesso);
+
+        // Act
+        var resultado = await _controller.Editar(id, command, CancellationToken.None);
+
+        // Assert
+        var objectResult = resultado.Should().BeOfType<ObjectResult>().Subject;
+        objectResult.StatusCode.Should().Be(200);
+        objectResult.Value.Should().BeEquivalentTo(new { mensagem = "Campanha editada com sucesso." });
+    }
+
+    [Fact(DisplayName = "Ativar: Deve retornar HTTP 200 (OK) ao ativar campanha com sucesso")]
+    public async Task Ativar_QuandoSucesso_DeveRetornarOk()
+    {
+        // Arrange
+        var id = Guid.NewGuid();
+        var resultadoSucesso = Result<string>.Ok("Campanha ativada com sucesso.");
+
+        _mediatorMock.Setup(m => m.Send(It.IsAny<AtivarCampanhaCommand>(), It.IsAny<CancellationToken>()))
+                     .ReturnsAsync(resultadoSucesso);
+
+        // Act
+        var resultado = await _controller.Ativar(id, CancellationToken.None);
+
+        // Assert
+        var objectResult = resultado.Should().BeOfType<ObjectResult>().Subject;
+        objectResult.StatusCode.Should().Be(200);
+        objectResult.Value.Should().BeEquivalentTo(new { mensagem = "Campanha ativada com sucesso." });
+    }
+
+    [Fact(DisplayName = "Prorrogar: Deve retornar HTTP 200 (OK) ao prorrogar campanha com sucesso")]
+    public async Task Prorrogar_QuandoSucesso_DeveRetornarOk()
+    {
+        // Arrange
+        var id = Guid.NewGuid();
+        var command = new ProrrogarCampanhaCommand(id, DateTime.UtcNow.AddDays(15));
+        var resultadoSucesso = Result<string>.Ok("Campanha prorrogada com sucesso.");
+
+        _mediatorMock.Setup(m => m.Send(It.IsAny<ProrrogarCampanhaCommand>(), It.IsAny<CancellationToken>()))
+                     .ReturnsAsync(resultadoSucesso);
+
+        // Act
+        var resultado = await _controller.Prorrogar(id, command, CancellationToken.None);
+
+        // Assert
+        var objectResult = resultado.Should().BeOfType<ObjectResult>().Subject;
+        objectResult.StatusCode.Should().Be(200);
+        objectResult.Value.Should().BeEquivalentTo(new { mensagem = "Campanha prorrogada com sucesso." });
+    }
+
 
 }
