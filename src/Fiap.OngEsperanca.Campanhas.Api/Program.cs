@@ -1,6 +1,7 @@
 using Fiap.OngEsperanca.Campanhas.Api.Domain.Repositories;
 using Fiap.OngEsperanca.Campanhas.Api.Domain.Services;
 using Fiap.OngEsperanca.Campanhas.Api.Infrastructure.Mensageria;
+using Fiap.OngEsperanca.Campanhas.Api.Infrastructure.Mensageria.Consumers;
 using Fiap.OngEsperanca.Campanhas.Api.Infrastructure.Persistence.Relational;
 using Fiap.OngEsperanca.Campanhas.Api.Infrastructure.Persistence.Relational.Repositories;
 using FluentValidation;
@@ -11,6 +12,12 @@ using System.Reflection;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Adicione a Fábrica de Conexões do RabbitMQ
+builder.Services.AddSingleton(new RabbitMQ.Client.ConnectionFactory { HostName = "localhost" });
+
+// O seu consumer que já estava aí:
+builder.Services.AddHostedService<DoacaoProcessadaConsumer>();
 
 // 1. Configurando a injeção do DbContext (PostgreSQL)
 builder.Services.AddDbContext<CampanhasDbContext>(options =>
