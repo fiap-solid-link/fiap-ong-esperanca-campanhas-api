@@ -1,7 +1,6 @@
 ﻿using Fiap.OngEsperanca.Campanhas.Api.Domain.Exceptions;
 using System;
 
-
 namespace Fiap.OngEsperanca.Campanhas.Api.Domain.Entities;
 
 public class Campanha
@@ -24,7 +23,6 @@ public class Campanha
 
     public Campanha(string titulo, string descricao, DateTime dataInicio, DateTime dataFim, decimal metaFinanceira)
     {
-        // Regras de negócio obrigatórias
         if (dataFim < DateTime.UtcNow)
             throw new DomainException("A data de término não pode estar no passado.");
 
@@ -38,12 +36,54 @@ public class Campanha
         DataFim = dataFim;
         MetaFinanceira = metaFinanceira;
 
-        // Toda campanha nasce Ativa e com 0 arrecadado
-        Status = StatusCampanha.Ativa;
+        // Alinhado com a documentação: Toda campanha nasce "Cadastrada"
+        Status = StatusCampanha.Cadastrada;
         ValorTotalArrecadado = 0;
     }
 
-    // Método para ser chamado pelo Consumer quando o Worker processar a doação
+    // =========================================================
+    // NOVOS MÉTODOS DO CICLO DE VIDA (Event Storming)
+    // =========================================================
+
+    public void Editar(string titulo, string descricao, decimal metaFinanceira)
+    {
+        // Regra de Negócio: Edição só em Cadastrada
+        if (Status != StatusCampanha.Cadastrada)
+            throw new DomainException("Apenas campanhas no status 'Cadastrada' podem ser editadas.");
+
+        if (metaFinanceira <= 0)
+            throw new DomainException("A meta financeira deve ser maior que zero.");
+
+        Titulo = titulo;
+        Descricao = descricao;
+        MetaFinanceira = metaFinanceira;
+    }
+
+    public void Ativar()
+    {
+        // Regra de Negócio: Transição de Cadastrada para EmAndamento
+        if (Status != StatusCampanha.Cadastrada)
+            throw new DomainException("Apenas campanhas 'Cadastradas' podem ser ativadas.");
+
+        Status = StatusCampanha.EmAndamento;
+    }
+
+    public void Prorrogar(DateTime novaDataFim)
+    {
+        // Regra de Negócio: Prorrogação só em EmAndamento
+        if (Status != StatusCampanha.EmAndamento)
+            throw new DomainException("Apenas campanhas 'Em Andamento' podem ser prorrogadas.");
+
+        if (novaDataFim <= DataFim)
+            throw new DomainException("A nova data de término deve ser posterior à data atual.");
+
+        DataFim = novaDataFim;
+    }
+
+    // =========================================================
+    // MÉTODOS EXISTENTES (Ajustados)
+    // =========================================================
+
     public void AdicionarArrecadacao(decimal valor)
     {
         if (valor > 0)
@@ -52,21 +92,21 @@ public class Campanha
         }
     }
 
-    // Método de negócio para cancelar a campanha
     public void Cancelar()
     {
-        if (Status != StatusCampanha.Ativa)
-            throw new DomainException("Apenas campanhas ativas podem ser canceladas.");
+        // Se já estiver Concluída ou Cancelada, não pode cancelar de novo
+        if (Status == StatusCampanha.Concluida || Status == StatusCampanha.Cancelada)
+            throw new DomainException("Não é possível cancelar uma campanha já encerrada ou cancelada.");
 
         Status = StatusCampanha.Cancelada;
     }
-
 }
 
+// Alinhado com o Bounded Context do projeto
 public enum StatusCampanha
 {
-    Ativa,
+    Cadastrada,
+    EmAndamento,
     Concluida,
     Cancelada
 }
-

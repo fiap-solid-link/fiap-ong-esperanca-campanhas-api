@@ -95,7 +95,7 @@ public class CampanhasControllerTests
         // Criamos uma lista fake com 1 campanha para o teste
         var listaFake = new List<CampanhaResponse>
         {
-            new CampanhaResponse(Guid.NewGuid(), "Campanha 1", "Desc", 1000m, 150m, StatusCampanha.Ativa)
+            new CampanhaResponse(Guid.NewGuid(), "Campanha 1", "Desc", 1000m, 150m, StatusCampanha.EmAndamento)
         };
 
         // O MediatR vai devolver o Result de sucesso contendo a nossa lista

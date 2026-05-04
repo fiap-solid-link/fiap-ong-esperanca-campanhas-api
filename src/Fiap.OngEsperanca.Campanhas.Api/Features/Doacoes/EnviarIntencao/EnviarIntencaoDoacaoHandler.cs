@@ -21,9 +21,9 @@ public sealed class EnviarIntencaoDoacaoHandler(
         if (campanha is null)
             return Result<string>.Fail("Campanha não encontrada.", 404);
 
-        // 2. Valida regras de negócio (Só doa para campanha ativa)
-        if (campanha.Status != StatusCampanha.Ativa)
-            return Result<string>.Fail("Não é possível doar para uma campanha inativa ou cancelada.");
+        // 2. Valida regras de negócio (Só doa para campanha Em Andamento)
+        if (campanha.Status != StatusCampanha.EmAndamento)
+            return Result<string>.Fail("Não é possível doar para uma campanha que não esteja em andamento.");
 
         if (request.Valor <= 0)
             return Result<string>.Fail("O valor da doação deve ser maior que zero.");
