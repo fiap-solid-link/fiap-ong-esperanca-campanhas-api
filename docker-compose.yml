@@ -1,27 +1,38 @@
 services:
-  postgres-campanhas:
+  postgres:
     image: postgres:16-alpine
-    container_name: esperanca-postgres-campanhas
+    container_name: esperanca-postgres
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: campanhas_db
+      POSTGRES_DB: campanha_db
     ports:
       - "5432:5432"
     volumes:
-      - postgres_campanhas_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
       retries: 5
 
-  rabbitmq:
-    image: rabbitmq:3-management-alpine
-    container_name: esperanca-rabbitmq
+  campanha-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: esperanca-campanha-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__campanhaDb: "Host=postgres;Port=5432;Database=campanha_db;Username=postgres;Password=postgres"
+      Jwt__SecretKey: "SuperSecretKey-ParaDesenvolvimento-MinimoDE32Chars!"
+      Jwt__Issuer: "esperanca-campanha-api"
+      Jwt__Audience: "esperanca-platform"
+      Jwt__AccessTokenExpirationMinutes: "30"
     ports:
-      - "5672:5672"   # Porta onde a API envia as mensagens
-      - "15672:15672" # Porta do painel visual no navegador
+      - "5010:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
 
 volumes:
-  postgres_campanhas_data:
+  postgres_data:

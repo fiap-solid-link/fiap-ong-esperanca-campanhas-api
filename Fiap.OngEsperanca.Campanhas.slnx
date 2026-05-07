@@ -1,7 +1,0 @@
-<Solution>
-  <Folder Name="/src/">
-    <Project Path="src/Fiap.OngEsperanca.Campanhas.Api.Tests/Fiap.OngEsperanca.Campanhas.Api.Tests.csproj" />
-    <Project Path="src/Fiap.OngEsperanca.Campanhas.Api/Fiap.OngEsperanca.Campanhas.Api.csproj" />
-    <Project Path="src/Fiap.OngEsperanca.Doacoes.Worker/Fiap.OngEsperanca.Doacoes.Worker.csproj" />
-  </Folder>
-</Solution>

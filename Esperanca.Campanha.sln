@@ -1,0 +1,51 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{1F5838F6-E1F7-461E-BA48-94544BC72255}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{71E1A9D3-2B5D-4599-8349-4082741E5AEF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Esperanca.Campanha.WebApi", "src\Esperanca.Campanha.WebApi\Esperanca.Campanha.WebApi.csproj", "{84A8667C-D42E-436B-A360-C1AF3B227D7A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Esperanca.Campanha.Domain", "src\Esperanca.Campanha.Domain\Esperanca.Campanha.Domain.csproj", "{7E789080-36B4-43BE-BCD5-DB8517B8F28A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Esperanca.Campanha.Application", "src\Esperanca.Campanha.Application\Esperanca.Campanha.Application.csproj", "{8B344A67-2ADA-4E8E-9B11-CE7094A2E1F5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Esperanca.Campanha.Infrastructure", "src\Esperanca.Campanha.Infrastructure\Esperanca.Campanha.Infrastructure.csproj", "{E3C8192F-8D7B-4FC6-A057-7F56653515A0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Esperanca.Campanha.UnitTests", "test\Esperanca.Campanha.UnitTests\Esperanca.Campanha.UnitTests.csproj", "{C27F5B9E-5DEB-436A-A11C-E0549AF894FD}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{84A8667C-D42E-436B-A360-C1AF3B227D7A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{84A8667C-D42E-436B-A360-C1AF3B227D7A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{84A8667C-D42E-436B-A360-C1AF3B227D7A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{84A8667C-D42E-436B-A360-C1AF3B227D7A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7E789080-36B4-43BE-BCD5-DB8517B8F28A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7E789080-36B4-43BE-BCD5-DB8517B8F28A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7E789080-36B4-43BE-BCD5-DB8517B8F28A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7E789080-36B4-43BE-BCD5-DB8517B8F28A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8B344A67-2ADA-4E8E-9B11-CE7094A2E1F5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8B344A67-2ADA-4E8E-9B11-CE7094A2E1F5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8B344A67-2ADA-4E8E-9B11-CE7094A2E1F5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8B344A67-2ADA-4E8E-9B11-CE7094A2E1F5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E3C8192F-8D7B-4FC6-A057-7F56653515A0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E3C8192F-8D7B-4FC6-A057-7F56653515A0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E3C8192F-8D7B-4FC6-A057-7F56653515A0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E3C8192F-8D7B-4FC6-A057-7F56653515A0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C27F5B9E-5DEB-436A-A11C-E0549AF894FD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C27F5B9E-5DEB-436A-A11C-E0549AF894FD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C27F5B9E-5DEB-436A-A11C-E0549AF894FD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C27F5B9E-5DEB-436A-A11C-E0549AF894FD}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{84A8667C-D42E-436B-A360-C1AF3B227D7A} = {1F5838F6-E1F7-461E-BA48-94544BC72255}
+		{7E789080-36B4-43BE-BCD5-DB8517B8F28A} = {1F5838F6-E1F7-461E-BA48-94544BC72255}
+		{8B344A67-2ADA-4E8E-9B11-CE7094A2E1F5} = {1F5838F6-E1F7-461E-BA48-94544BC72255}
+		{E3C8192F-8D7B-4FC6-A057-7F56653515A0} = {1F5838F6-E1F7-461E-BA48-94544BC72255}
+		{C27F5B9E-5DEB-436A-A11C-E0549AF894FD} = {71E1A9D3-2B5D-4599-8349-4082741E5AEF}
+	EndGlobalSection
+EndGlobal
