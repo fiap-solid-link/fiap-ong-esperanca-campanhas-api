@@ -1,12 +1,12 @@
 using System.Text.Json;
-using Esperanca.Campanha.Application.Doacoes._Shared.Contracts;
+using Esperanca.Message.Events;
 using Shouldly;
 
 namespace Esperanca.Campanha.UnitTests.Application.Doacoes._Shared.Contracts;
 
-public class DoacaoRecebidaEventContractTest
+public class DoacaoRecebidaContractTest
 {
-    private static readonly DoacaoRecebidaEvent Sample = new(
+    private static readonly DoacaoRecebida Sample = new(
         IdDoacao:       Guid.Parse("11111111-1111-1111-1111-111111111111"),
         IdCampanha:     Guid.Parse("22222222-2222-2222-2222-222222222222"),
         IdDoador:       Guid.Parse("33333333-3333-3333-3333-333333333333"),
@@ -19,7 +19,7 @@ public class DoacaoRecebidaEventContractTest
     {
         // Act
         var json = JsonSerializer.Serialize(Sample);
-        var deserialized = JsonSerializer.Deserialize<DoacaoRecebidaEvent>(json);
+        var deserialized = JsonSerializer.Deserialize<DoacaoRecebida>(json);
 
         // Assert
         deserialized.ShouldNotBeNull();
@@ -64,7 +64,7 @@ public class DoacaoRecebidaEventContractTest
             """;
 
         // Act
-        var deserialized = JsonSerializer.Deserialize<DoacaoRecebidaEvent>(jsonExterno);
+        var deserialized = JsonSerializer.Deserialize<DoacaoRecebida>(jsonExterno);
 
         // Assert
         deserialized.ShouldNotBeNull();

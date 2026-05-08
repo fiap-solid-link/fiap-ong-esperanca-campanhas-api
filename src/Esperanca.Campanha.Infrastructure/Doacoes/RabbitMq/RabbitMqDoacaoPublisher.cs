@@ -1,6 +1,6 @@
 using System.Text.Json;
 using Esperanca.Campanha.Application.Doacoes._Shared;
-using Esperanca.Campanha.Application.Doacoes._Shared.Contracts;
+using Esperanca.Message.Events;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
@@ -18,7 +18,7 @@ public sealed class RabbitMqDoacaoPublisher(
     private IConnection? _connection;
     private IChannel? _channel;
 
-    public async Task PublicarRecebidaAsync(DoacaoRecebidaEvent evento, CancellationToken ct = default)
+    public async Task PublicarRecebidaAsync(DoacaoRecebida evento, CancellationToken ct = default)
     {
         var channel = await EnsureChannelAsync(ct);
 
@@ -42,7 +42,7 @@ public sealed class RabbitMqDoacaoPublisher(
             cancellationToken: ct);
 
         logger.LogInformation(
-            "DoacaoRecebidaEvent publicado em {Exchange}/{RoutingKey} (idDoacao={IdDoacao})",
+            "DoacaoRecebida publicada em {Exchange}/{RoutingKey} (idDoacao={IdDoacao})",
             _opts.Exchange, _opts.RecebidaRoutingKey, evento.IdDoacao);
     }
 

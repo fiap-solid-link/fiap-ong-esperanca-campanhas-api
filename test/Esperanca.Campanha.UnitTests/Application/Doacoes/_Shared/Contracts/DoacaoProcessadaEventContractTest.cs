@@ -1,5 +1,5 @@
 using System.Text.Json;
-using Esperanca.Campanha.Application.Doacoes._Shared.Contracts;
+using Esperanca.Message.Events;
 using Shouldly;
 
 namespace Esperanca.Campanha.UnitTests.Application.Doacoes._Shared.Contracts;

@@ -1,6 +1,6 @@
 using System.Text.Json;
-using Esperanca.Campanha.Application.Doacoes._Shared.Contracts;
 using Esperanca.Campanha.Application.Doacoes.ProcessarDoacaoProcessada;
+using Esperanca.Message.Events;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;

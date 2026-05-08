@@ -2,8 +2,8 @@ using Esperanca.Campanha.Application._Shared;
 using Esperanca.Campanha.Application._Shared.Localization;
 using Esperanca.Campanha.Application._Shared.Results;
 using Esperanca.Campanha.Application.Doacoes._Shared;
-using Esperanca.Campanha.Application.Doacoes._Shared.Contracts;
 using Esperanca.Campanha.Domain.Campanhas;
+using Esperanca.Message.Events;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -36,7 +36,7 @@ public sealed class EnviarIntencaoDoacaoHandler(
         var idempotencyKey = Guid.NewGuid();
         var dataIntencao   = dateTimeProvider.UtcNow;
 
-        var evento = new DoacaoRecebidaEvent(
+        var evento = new DoacaoRecebida(
             idDoacao,
             campanha.Id,
             currentUser.UserId,
