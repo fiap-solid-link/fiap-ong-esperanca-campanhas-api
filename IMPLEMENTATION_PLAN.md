@@ -158,13 +158,34 @@
 
 ---
 
-## ⏭️ Fase 9 — Transparência (MongoDB read side)
+## ✅ Fase 9 — Transparência (MongoDB read side) (concluída)
 
-- [ ] `ITransparenciaReadRepository` (Application) + 3 queries: `ConsultarPainelMacro`, `ConsultarListaCampanhas`, `ConsultarDetalheCampanha`.
-- [ ] `TransparenciaMongoRepository` (Infra) lê `painel_macro`, `lista_campanhas`, `campanha_detalhe`.
-- [ ] `TransparenciaController` com `[AllowAnonymous]`.
-- [ ] Config `ConnectionStrings:DoacoesMongo`.
-- [ ] **Seed**: `init-mongo.js` no `docker-compose.yml` para smoke local sem o Worker.
+**Status:** ✔️ Concluída · 136 testes passando
+
+**Entregues:**
+- `src/Esperanca.Campanha.Application/Transparencia/_Shared/`:
+  - DTOs: `PainelMacroDto`, `TopDoadorDto`, `CampanhaTransparenciaDto`, `CampanhaDetalheDto`, `DoacaoAnonimaDto`.
+  - `ITransparenciaReadRepository` com 3 métodos: `ObterPainelMacroAsync`, `ListarCampanhasAsync`, `ObterDetalheCampanhaAsync`.
+- 3 slices (`Application/Transparencia/`):
+  - `ConsultarPainelMacro/{Query,Handler}.cs` — quando o read model está vazio devolve um painel zerado (não falha) para dar smoke pública mesmo sem o Worker.
+  - `ConsultarListaCampanhas/{Query,Handler}.cs` — devolve a lista (já vem ordenada `EmAndamento` → `Concluida`, depois por `DataInicio desc` no repository).
+  - `ConsultarDetalheCampanha/{Query,Handler}.cs` — 404 (`Campanha:901`) quando o read model não tem o documento.
+- `src/Esperanca.Campanha.WebApi/Transparencia/TransparenciaController.cs` — `[AllowAnonymous]` com `GET /api/transparencia/painel`, `GET /api/transparencia/campanhas` e `GET /api/transparencia/campanhas/{id:guid}`.
+- `src/Esperanca.Campanha.Infrastructure/Transparencia/Mongo/`:
+  - `TransparenciaMongoOptions` (DatabaseName + 3 nomes de collection).
+  - `Documents.cs` — POCOs com `[BsonElement]` para mapear `painel_macro`, `lista_campanhas`, `campanha_detalhe`.
+  - `TransparenciaMongoRepository` (escopo Scoped) lê via `IMongoClient` registrado como Singleton.
+- `CampanhaInfrastructureModule` registra `IMongoClient` (`ConnectionStrings:DoacoesMongo`), `TransparenciaMongoOptions` e `ITransparenciaReadRepository → TransparenciaMongoRepository`.
+- `Directory.Packages.props` + `Infrastructure.csproj`: `MongoDB.Driver 3.8.0`.
+- `appsettings.json`: novas chaves `ConnectionStrings:DoacoesMongo` e `TransparenciaMongo:*`.
+- `docker-compose.yml`: serviço `mongo:7` com healthcheck e `./docker/mongo/init-mongo.js` montado em `/docker-entrypoint-initdb.d`. `campanha-api` agora depende de `mongo` (healthy) e recebe `ConnectionStrings__DoacoesMongo`.
+- `docker/mongo/init-mongo.js`: seed de `painel_macro`, `lista_campanhas`, `campanha_detalhe` com 2 campanhas mock para smoke local sem o Worker.
+- `test/.../Application/Transparencia/`:
+  - `_Shared/Mocks/TransparenciaReadRepositoryMock.cs` (Setup fluente para cada um dos 3 métodos).
+  - `_Shared/Fakers/TransparenciaFaker.cs` (DTO factories).
+  - `ConsultarPainelMacro/` — 2 cenários (painel real do Mongo; Mongo vazio devolve painel zerado).
+  - `ConsultarListaCampanhas/` — 2 cenários (com campanhas; lista vazia).
+  - `ConsultarDetalheCampanha/` — 2 cenários (encontrado; 404).
 
 ---
 
@@ -179,6 +200,6 @@
 
 ## Mapa rápido — onde paramos
 
-- **Última fase concluída:** Fase 8 (Scheduler — `CampanhaSchedulerService` + slice `EncerrarCampanhasVencidas`).
-- **Próximo passo:** Fase 9 (Transparência — read side em MongoDB com `ITransparenciaReadRepository`, três queries, `TransparenciaController` `[AllowAnonymous]` e seed `init-mongo.js`).
-- **Para retomar:** rode `dotnet test test/Esperanca.Campanha.UnitTests` para confirmar baseline verde (130 testes), depois siga a checklist da Fase 9.
+- **Última fase concluída:** Fase 9 (Transparência — read side MongoDB, 3 endpoints públicos, seed mock).
+- **Próximo passo:** Fase 10 (Cross-cutting — `/health` agregando Postgres+Mongo+RabbitMQ, Serilog estruturado com correlation-id, Swagger com botão Bearer, README de execução).
+- **Para retomar:** rode `dotnet test test/Esperanca.Campanha.UnitTests` para confirmar baseline verde (136 testes), depois siga a checklist da Fase 10.

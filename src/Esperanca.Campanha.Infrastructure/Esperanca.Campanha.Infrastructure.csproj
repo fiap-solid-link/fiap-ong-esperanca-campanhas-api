@@ -4,6 +4,7 @@
         <PackageReference Include="BCrypt.Net-Next" />
         <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
         <PackageReference Include="Microsoft.Extensions.Options" />
+        <PackageReference Include="MongoDB.Driver" />
         <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
         <PackageReference Include="RabbitMQ.Client" />
     </ItemGroup>

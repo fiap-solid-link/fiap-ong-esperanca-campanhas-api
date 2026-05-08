@@ -16,6 +16,20 @@ services:
       timeout: 5s
       retries: 5
 
+  mongo:
+    image: mongo:7
+    container_name: esperanca-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+      - ./docker/mongo/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   campanha-api:
     build:
       context: .
@@ -24,6 +38,7 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__campanhaDb: "Host=postgres;Port=5432;Database=campanha_db;Username=postgres;Password=postgres"
+      ConnectionStrings__DoacoesMongo: "mongodb://mongo:27017"
       Jwt__SecretKey: "SuperSecretKey-ParaDesenvolvimento-MinimoDE32Chars!"
       Jwt__Issuer: "esperanca-campanha-api"
       Jwt__Audience: "esperanca-platform"
@@ -33,6 +48,9 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      mongo:
+        condition: service_healthy
 
 volumes:
   postgres_data:
+  mongo_data:
