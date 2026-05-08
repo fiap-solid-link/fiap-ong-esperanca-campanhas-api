@@ -65,10 +65,15 @@
 
 ---
 
-## ⏭️ Fase 4 — Slices Read (gestão)
+## ✅ Fase 4 — Slices Read (gestão) (concluída)
 
-- [ ] `ObterCampanha` — GET `/api/campanhas/{id}` (escopo do gestor).
-- [ ] `ListarCampanhasGestor` — GET `/api/campanhas` com paginação + filtros (status, intervalo de datas).
+**Status:** ✔️ Concluída · 103 testes passando
+
+**Entregues:**
+- `src/Esperanca.Campanha.Application/Campanhas/Obter/{ObterCampanhaQuery,Handler}.cs` — GET `/api/campanhas/{id}` filtrado pelo `ICurrentUser.UserId` (campanhas de outros gestores retornam 404).
+- `src/Esperanca.Campanha.Application/Campanhas/Listar/{ListarCampanhasGestorQuery,Handler,Validator}.cs` + `PaginaCampanhasDto.cs` — GET `/api/campanhas` com paginação (`Pagina`, `TamanhoPagina ≤ 100`) e filtros opcionais (`Status`, intervalo `DataInicioDe..DataInicioAte`); ordenação por `DataInicio desc, Id asc`.
+- `CampanhaController`: endpoints `GET /api/campanhas` e `GET /api/campanhas/{id}` (já protegidos pelo `[Authorize(Roles = "GestorONG")]` da classe).
+- `test/...Application/Campanhas/Obter/` (3 cenários do handler) e `test/...Application/Campanhas/Listar/` (5 cenários do handler + 6 do validator).
 
 ---
 
@@ -140,6 +145,6 @@
 
 ## Mapa rápido — onde paramos
 
-- **Última fase concluída:** Fase 3 (slices Write — CriarCampanha, EditarCampanha, AtivarCampanha, ProrrogarCampanha, CancelarCampanha).
-- **Próximo passo:** Fase 4 (slices Read — ObterCampanha, ListarCampanhasGestor).
-- **Para retomar:** rode `dotnet test test/Esperanca.Campanha.UnitTests` para confirmar baseline verde (89 testes), depois siga a checklist da Fase 4.
+- **Última fase concluída:** Fase 4 (slices Read — ObterCampanha, ListarCampanhasGestor).
+- **Próximo passo:** Fase 5 (Infrastructure write side + Controller + JWT — migration EF Core inicial, JWT HMAC-SHA256, smoke `WebApplicationFactory`).
+- **Para retomar:** rode `dotnet test test/Esperanca.Campanha.UnitTests` para confirmar baseline verde (103 testes), depois siga a checklist da Fase 5.

@@ -2,6 +2,8 @@ using Esperanca.Campanha.Application.Campanhas.Ativar;
 using Esperanca.Campanha.Application.Campanhas.Cancelar;
 using Esperanca.Campanha.Application.Campanhas.Criar;
 using Esperanca.Campanha.Application.Campanhas.Editar;
+using Esperanca.Campanha.Application.Campanhas.Listar;
+using Esperanca.Campanha.Application.Campanhas.Obter;
 using Esperanca.Campanha.Application.Campanhas.Prorrogar;
 using Esperanca.Campanha.Domain.Campanhas;
 using Esperanca.Campanha.WebApi._Shared.Extensions;
@@ -24,6 +26,36 @@ public sealed class CampanhaController(ISender sender) : ControllerBase
     public async Task<IActionResult> Criar([FromBody] CriarCampanhaCommand command, CancellationToken ct)
     {
         var result = await sender.Send(command, ct);
+        return result.ToActionResult(this);
+    }
+
+    [HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> Listar(
+        [FromQuery] int pagina = 1,
+        [FromQuery] int tamanhoPagina = 20,
+        [FromQuery] StatusCampanha? status = null,
+        [FromQuery] DateTime? dataInicioDe = null,
+        [FromQuery] DateTime? dataInicioAte = null,
+        CancellationToken ct = default)
+    {
+        var result = await sender.Send(
+            new ListarCampanhasGestorQuery(pagina, tamanhoPagina, status, dataInicioDe, dataInicioAte),
+            ct);
+        return result.ToActionResult(this);
+    }
+
+    [HttpGet("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> Obter([FromRoute] Guid id, CancellationToken ct)
+    {
+        var result = await sender.Send(new ObterCampanhaQuery(id), ct);
         return result.ToActionResult(this);
     }
 
