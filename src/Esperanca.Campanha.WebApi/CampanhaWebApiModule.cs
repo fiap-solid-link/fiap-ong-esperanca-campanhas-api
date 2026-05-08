@@ -1,5 +1,6 @@
 using Esperanca.Campanha.Application;
 using Esperanca.Campanha.Infrastructure;
+using Esperanca.Campanha.WebApi._Shared.Authentication;
 using Microsoft.OpenApi.Models;
 
 namespace Esperanca.Campanha.WebApi;
@@ -13,6 +14,9 @@ public static class CampanhaWebApiModule
         CampanhaInfrastructureModule.ConfigureServices(services, configuration);
 
         services.AddHttpContextAccessor();
+
+        // Auth
+        services.AddCampanhaJwtAuthentication(configuration);
 
         // Controllers
         services.AddControllers();

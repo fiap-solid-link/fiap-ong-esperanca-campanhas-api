@@ -77,13 +77,20 @@
 
 ---
 
-## ⏭️ Fase 5 — Infrastructure write side + Controller + JWT
+## ✅ Fase 5 — Infrastructure write side + Controller + JWT (concluída)
 
-- [ ] Migration EF Core inicial para `Campanha`.
-- [ ] `CampanhaController` finíssimo.
-- [ ] JWT HMAC-SHA256 via `Jwt:*` (mesma chave do `identity-api`).
-- [ ] Composition root: `CampanhaWebApiModule.ConfigureServices` no `Program.cs`.
-- [ ] Smoke `WebApplicationFactory`: 201 com role correto, 401 sem token, 403 com role errado.
+**Status:** ✔️ Concluída · 106 testes passando (103 unit + 3 smoke)
+
+**Entregues:**
+- `src/Esperanca.Campanha.Infrastructure/Migrations/20260508205247_InicialCampanha.cs` — migration inicial criando tabela `campanhas` (chave `Id`, índices `IdGestor` e `Status`, `numeric(18,2)` para meta/arrecadação).
+- `src/Esperanca.Campanha.WebApi/_Shared/Authentication/{JwtOptions,JwtAuthenticationExtensions}.cs` — JWT Bearer HMAC-SHA256 com `Jwt:*` validando issuer/audience/lifetime/signing key. Configuração feita via `services.AddOptions<JwtBearerOptions>().Configure<IConfiguration>(...)` para que o `WebApplicationFactory` consiga sobrescrever `Jwt:*` em testes.
+- `CampanhaWebApiModule` agora chama `services.AddCampanhaJwtAuthentication(configuration)` (composition root continua único — `Program.cs` apenas dispara `CampanhaWebApiModule`).
+- `CampanhaController` permanece fino: cada endpoint apenas dispara o `ISender.Send` e traduz o `Result` via `ToActionResult`.
+- `test/...UnitTests/WebApi/Smoke/`:
+  - `CampanhaWebApplicationFactory` substitui `CampanhaDbContext` por InMemory (limpa todos os descritors `Microsoft.EntityFrameworkCore`/`Npgsql` antes de re-registrar) e injeta `Jwt:*` via `AddInMemoryCollection`; remove o health check do Postgres.
+  - `JwtTokenFactory` emite tokens HMAC-SHA256 com `sub` + role.
+  - `CampanhaSmokeTest` cobre os três cenários: `POST /api/campanhas` retorna 201 com role `GestorONG`, 401 sem token, 403 com role errada.
+- `Directory.Packages.props` + `UnitTests.csproj`: adicionados `Microsoft.AspNetCore.Mvc.Testing 10.0.5` e `Microsoft.EntityFrameworkCore.InMemory 10.0.5`.
 
 ---
 
@@ -145,6 +152,6 @@
 
 ## Mapa rápido — onde paramos
 
-- **Última fase concluída:** Fase 4 (slices Read — ObterCampanha, ListarCampanhasGestor).
-- **Próximo passo:** Fase 5 (Infrastructure write side + Controller + JWT — migration EF Core inicial, JWT HMAC-SHA256, smoke `WebApplicationFactory`).
-- **Para retomar:** rode `dotnet test test/Esperanca.Campanha.UnitTests` para confirmar baseline verde (103 testes), depois siga a checklist da Fase 5.
+- **Última fase concluída:** Fase 5 (Infrastructure write side + JWT + smoke `WebApplicationFactory`).
+- **Próximo passo:** Fase 6 (Doações — intenção síncrona com `IDoacaoPublisher`/RabbitMQ + `DoacaoController` + teste de contrato do `DoacaoRecebidaEvent`).
+- **Para retomar:** rode `dotnet test test/Esperanca.Campanha.UnitTests` para confirmar baseline verde (106 testes), depois siga a checklist da Fase 6.
