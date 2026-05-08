@@ -144,13 +144,17 @@
 
 ---
 
-## ⏭️ Fase 8 — Scheduler
+## ✅ Fase 8 — Scheduler (concluída)
 
-> Commit `30a0037` (scheduler) + testes em `e19d28f` — portar.
+**Status:** ✔️ Concluída · 130 testes passando
 
-- [ ] `CampanhaSchedulerService` (BackgroundService).
-- [ ] Config: `Scheduler:IntervaloEmSegundos` (default 60), `Scheduler:ProximidadeVencimentoEmDias` (default 3).
-- [ ] Por tick: para cada `EmAndamento` → `ConcluirPorData` se aplicável; log estruturado `CampanhaProximaDoVencimento` na janela.
+**Entregues:**
+- `src/Esperanca.Campanha.Application/Campanhas/EncerrarVencidas/{EncerrarCampanhasVencidasCommand,Handler}.cs` — handler MediatR puro: itera `Status == EmAndamento`, chama `ConcluirPorData(agora)` quando `PodeConcluirPorData`, loga `CampanhaProximaDoVencimento` (nível Information, com `IdCampanha`/`DataFim`/`ValorArrecadado`/`MetaFinanceira`) para campanhas dentro da janela `ProximidadeVencimentoEmDias`. `SaveChangesAsync` só é disparado quando há ao menos uma conclusão.
+- `src/Esperanca.Campanha.Infrastructure/Campanhas/Scheduler/SchedulerOptions.cs` — `IntervaloEmSegundos` (default 60), `ProximidadeVencimentoEmDias` (default 3).
+- `src/Esperanca.Campanha.Infrastructure/Campanhas/Scheduler/CampanhaSchedulerService.cs` — `BackgroundService` que executa `IMediator.Send(EncerrarCampanhasVencidasCommand(...))` em escopo próprio a cada tick. Erros de tick são logados e não derrubam o loop.
+- `CampanhaInfrastructureModule` registra `SchedulerOptions` (binda `Scheduler:*`) e o `CampanhaSchedulerService` como hosted service. Smoke tests continuam imunes (factory já remove `IHostedService`).
+- `appsettings.json` ganhou seção `Scheduler:*`.
+- `test/.../Application/Campanhas/EncerrarVencidas/EncerrarCampanhasVencidasHandlerTest.cs` — 6 cenários: encerra `PorData` vencida; **não** encerra `PorMeta` vencida sem meta atingida; campanhas próximas/distantes não persistem; sem campanhas `EmAndamento` não persiste; mistura de cenários processada corretamente em uma única passagem.
 
 ---
 
@@ -175,6 +179,6 @@
 
 ## Mapa rápido — onde paramos
 
-- **Última fase concluída:** Fase 7 (Consumer `DoacaoProcessadaEvent` + idempotência defensiva + policy de encerramento por meta).
-- **Próximo passo:** Fase 8 (Scheduler — `CampanhaSchedulerService` `BackgroundService` com `Scheduler:IntervaloEmSegundos` e `Scheduler:ProximidadeVencimentoEmDias`).
-- **Para retomar:** rode `dotnet test test/Esperanca.Campanha.UnitTests` para confirmar baseline verde (124 testes), depois siga a checklist da Fase 8.
+- **Última fase concluída:** Fase 8 (Scheduler — `CampanhaSchedulerService` + slice `EncerrarCampanhasVencidas`).
+- **Próximo passo:** Fase 9 (Transparência — read side em MongoDB com `ITransparenciaReadRepository`, três queries, `TransparenciaController` `[AllowAnonymous]` e seed `init-mongo.js`).
+- **Para retomar:** rode `dotnet test test/Esperanca.Campanha.UnitTests` para confirmar baseline verde (130 testes), depois siga a checklist da Fase 9.

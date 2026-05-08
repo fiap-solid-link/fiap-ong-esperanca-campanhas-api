@@ -2,6 +2,7 @@ using Esperanca.Campanha.Application._Shared;
 using Esperanca.Campanha.Application._Shared.Localization;
 using Esperanca.Campanha.Application.Doacoes._Shared;
 using Esperanca.Campanha.Infrastructure._Shared;
+using Esperanca.Campanha.Infrastructure.Campanhas.Scheduler;
 using Esperanca.Campanha.Infrastructure.Doacoes.RabbitMq;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -31,6 +32,10 @@ public static class CampanhaInfrastructureModule
         services.Configure<RabbitMqOptions>(configuration.GetSection(RabbitMqOptions.SectionName));
         services.AddSingleton<IDoacaoPublisher, RabbitMqDoacaoPublisher>();
         services.AddHostedService<RabbitMqDoacaoProcessadaConsumer>();
+
+        // Scheduler de encerramento por data
+        services.Configure<SchedulerOptions>(configuration.GetSection(SchedulerOptions.SectionName));
+        services.AddHostedService<CampanhaSchedulerService>();
 
         return services;
     }
