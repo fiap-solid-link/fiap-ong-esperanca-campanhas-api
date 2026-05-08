@@ -120,15 +120,27 @@
 
 ---
 
-## ⏭️ Fase 7 — Consumer `DoacaoProcessadaEvent` + policy de meta
+## ✅ Fase 7 — Consumer `DoacaoProcessadaEvent` + policy de meta (concluída)
 
-> Commits `feb2881` (consumer) e referências de scheduler trazem código da estrutura antiga — **portar**.
+**Status:** ✔️ Concluída · 124 testes passando
 
-- [ ] Consumer (Infra `BackgroundService`) com prefetch=1, ACK manual.
-- [ ] Handler interno: carrega `Campanha`, chama `RegistrarArrecadacao(Valor)` e, se `PodeConcluirPorMeta()`, `ConcluirPorMeta()`.
-- [ ] **Idempotência defensiva**: tabela `arrecadacoes_processadas (id_doacao PK)` antes de aplicar — protege reentrância. Coberta por teste.
-
-**Teste-chave:** mensagem repetida não soma duas vezes; valor que ultrapassa meta dispara `Concluida`.
+**Entregues:**
+- `src/Esperanca.Campanha.Domain/Doacoes/ArrecadacaoProcessada.cs` — entidade simples (PK `IdDoacao`) usada como ledger de idempotência defensiva.
+- `src/Esperanca.Campanha.Application/Doacoes/_Shared/Contracts/DoacaoProcessadaEvent.cs` — contrato consumido pelo serviço (record).
+- `src/Esperanca.Campanha.Application/Doacoes/ProcessarDoacaoProcessada/{ProcessarDoacaoProcessadaCommand,Handler}.cs` — handler verifica `arrecadacoes_processadas` (idempotência), carrega `Campanha`, chama `RegistrarArrecadacao(Valor)` e, se `PodeConcluirPorMeta()`, `ConcluirPorMeta()`. Persiste tudo em um único `SaveChangesAsync`. Campanha inexistente é ignorada com warning.
+- `src/Esperanca.Campanha.Infrastructure/Doacoes/Persistence/ArrecadacaoProcessadaConfiguration.cs` — mapping EF (PK `IdDoacao`, `numeric(18,2)` para Valor, índice em `IdCampanha`).
+- `src/Esperanca.Campanha.Infrastructure/Migrations/20260508211210_ArrecadacoesProcessadas.cs` — migration que cria tabela `arrecadacoes_processadas`.
+- `src/Esperanca.Campanha.Infrastructure/Doacoes/RabbitMq/`:
+  - `RabbitMqOptions` refatorado: chaves `RecebidaQueue/RecebidaRoutingKey/RecebidaDeadLetterQueue`, `ProcessadaQueue/ProcessadaRoutingKey/ProcessadaDeadLetterQueue`, `PrefetchCount`. `appsettings.json` atualizado.
+  - `RabbitMqTopology` (helper) declara `DeadLetter` (fanout) e `WorkQueue` (direct com DLX) — usado por publisher e consumer.
+  - `RabbitMqDoacaoPublisher` agora usa `RecebidaRoutingKey` e delega topologia ao helper.
+  - `RabbitMqDoacaoProcessadaConsumer` (`BackgroundService`) — conecta ao broker, declara topologia idempotente para `doacoes-processadas` + DLQ `doacoes-processadas-dlq`, aplica `BasicQosAsync(prefetchCount=1)`, ACK manual após `IMediator.Send` (escopo por mensagem). Falhas de payload/handler → `BasicNackAsync(requeue=false)` → DLQ.
+- `CampanhaInfrastructureModule` registra `RabbitMqDoacaoProcessadaConsumer` via `AddHostedService`.
+- `test/.../Application/_Shared/Mocks/AppDbContextMock.cs` — adicionado `ArrecadacoesProcessadasDbSet` + `Setup`/`Verify` correspondentes.
+- `test/.../Application/Doacoes/ProcessarDoacaoProcessada/`:
+  - Handler: 5 cenários (sucesso registra arrecadação + idempotência; mensagem repetida não soma; valor ≥ meta dispara `Concluida`; modo `PorData` mantém `EmAndamento` mesmo com meta atingida; campanha inexistente é ignorada).
+  - Contrato: 2 cenários (round-trip e leitura de payload externo).
+- `CampanhaWebApplicationFactory` atualizada para remover `IHostedService` registrados (impede o consumer de tentar conectar ao broker durante smoke tests).
 
 ---
 
@@ -163,6 +175,6 @@
 
 ## Mapa rápido — onde paramos
 
-- **Última fase concluída:** Fase 6 (Doações — intenção síncrona, `IDoacaoPublisher`, `RabbitMqDoacaoPublisher`, `DoacaoController`, teste de contrato).
-- **Próximo passo:** Fase 7 (Consumer `DoacaoProcessadaEvent` + idempotência via `arrecadacoes_processadas` + policy de encerramento por meta).
-- **Para retomar:** rode `dotnet test test/Esperanca.Campanha.UnitTests` para confirmar baseline verde (117 testes), depois siga a checklist da Fase 7.
+- **Última fase concluída:** Fase 7 (Consumer `DoacaoProcessadaEvent` + idempotência defensiva + policy de encerramento por meta).
+- **Próximo passo:** Fase 8 (Scheduler — `CampanhaSchedulerService` `BackgroundService` com `Scheduler:IntervaloEmSegundos` e `Scheduler:ProximidadeVencimentoEmDias`).
+- **Para retomar:** rode `dotnet test test/Esperanca.Campanha.UnitTests` para confirmar baseline verde (124 testes), depois siga a checklist da Fase 8.

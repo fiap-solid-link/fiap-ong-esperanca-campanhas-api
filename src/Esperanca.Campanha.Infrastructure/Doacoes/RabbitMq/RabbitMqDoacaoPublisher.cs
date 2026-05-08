@@ -35,7 +35,7 @@ public sealed class RabbitMqDoacaoPublisher(
 
         await channel.BasicPublishAsync(
             exchange: _opts.Exchange,
-            routingKey: _opts.RoutingKey,
+            routingKey: _opts.RecebidaRoutingKey,
             mandatory: false,
             basicProperties: props,
             body: body,
@@ -43,7 +43,7 @@ public sealed class RabbitMqDoacaoPublisher(
 
         logger.LogInformation(
             "DoacaoRecebidaEvent publicado em {Exchange}/{RoutingKey} (idDoacao={IdDoacao})",
-            _opts.Exchange, _opts.RoutingKey, evento.IdDoacao);
+            _opts.Exchange, _opts.RecebidaRoutingKey, evento.IdDoacao);
     }
 
     private async Task<IChannel> EnsureChannelAsync(CancellationToken ct)
@@ -85,57 +85,18 @@ public sealed class RabbitMqDoacaoPublisher(
 
     private async Task DeclareTopologyAsync(IChannel channel, CancellationToken ct)
     {
-        // Dead letter side
-        await channel.ExchangeDeclareAsync(
-            exchange: _opts.DeadLetterExchange,
-            type: ExchangeType.Fanout,
-            durable: true,
-            autoDelete: false,
-            cancellationToken: ct);
-
-        await channel.QueueDeclareAsync(
-            queue: _opts.DeadLetterQueue,
-            durable: true,
-            exclusive: false,
-            autoDelete: false,
-            cancellationToken: ct);
-
-        await channel.QueueBindAsync(
-            queue: _opts.DeadLetterQueue,
-            exchange: _opts.DeadLetterExchange,
-            routingKey: string.Empty,
-            cancellationToken: ct);
-
-        // Main exchange + queue with DLX
-        await channel.ExchangeDeclareAsync(
-            exchange: _opts.Exchange,
-            type: ExchangeType.Direct,
-            durable: true,
-            autoDelete: false,
-            cancellationToken: ct);
-
-        var queueArgs = new Dictionary<string, object?>
-        {
-            ["x-dead-letter-exchange"] = _opts.DeadLetterExchange
-        };
-
-        await channel.QueueDeclareAsync(
-            queue: _opts.Queue,
-            durable: true,
-            exclusive: false,
-            autoDelete: false,
-            arguments: queueArgs,
-            cancellationToken: ct);
-
-        await channel.QueueBindAsync(
-            queue: _opts.Queue,
-            exchange: _opts.Exchange,
-            routingKey: _opts.RoutingKey,
-            cancellationToken: ct);
+        await RabbitMqTopology.DeclareDeadLetterAsync(channel, _opts.DeadLetterExchange, _opts.RecebidaDeadLetterQueue, ct);
+        await RabbitMqTopology.DeclareWorkQueueAsync(
+            channel,
+            _opts.Exchange,
+            _opts.RecebidaQueue,
+            _opts.RecebidaRoutingKey,
+            _opts.DeadLetterExchange,
+            ct);
 
         logger.LogInformation(
-            "Topologia RabbitMQ declarada: exchange={Exchange}, queue={Queue}, dlx={Dlx}, dlq={Dlq}",
-            _opts.Exchange, _opts.Queue, _opts.DeadLetterExchange, _opts.DeadLetterQueue);
+            "Topologia RabbitMQ (publisher) declarada: exchange={Exchange}, queue={Queue}, dlx={Dlx}, dlq={Dlq}",
+            _opts.Exchange, _opts.RecebidaQueue, _opts.DeadLetterExchange, _opts.RecebidaDeadLetterQueue);
     }
 
     public async ValueTask DisposeAsync()

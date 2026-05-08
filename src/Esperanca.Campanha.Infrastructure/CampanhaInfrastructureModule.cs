@@ -30,6 +30,7 @@ public static class CampanhaInfrastructureModule
         // Mensageria — RabbitMQ
         services.Configure<RabbitMqOptions>(configuration.GetSection(RabbitMqOptions.SectionName));
         services.AddSingleton<IDoacaoPublisher, RabbitMqDoacaoPublisher>();
+        services.AddHostedService<RabbitMqDoacaoProcessadaConsumer>();
 
         return services;
     }

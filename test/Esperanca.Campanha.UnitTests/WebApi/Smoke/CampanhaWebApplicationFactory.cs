@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Hosting;
 
 namespace Esperanca.Campanha.UnitTests.WebApi.Smoke;
 
@@ -36,7 +37,18 @@ public class CampanhaWebApplicationFactory : WebApplicationFactory<Esperanca.Cam
         {
             ReplaceDbContextWithInMemory(services);
             RemoveExternalHealthChecks(services);
+            RemoveHostedServices(services);
         });
+    }
+
+    private static void RemoveHostedServices(IServiceCollection services)
+    {
+        var hostedServices = services
+            .Where(d => d.ServiceType == typeof(IHostedService))
+            .ToList();
+
+        foreach (var descriptor in hostedServices)
+            services.Remove(descriptor);
     }
 
     private void ReplaceDbContextWithInMemory(IServiceCollection services)
