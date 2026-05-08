@@ -27,29 +27,41 @@
 
 ---
 
-## ⏭️ Fase 2 — Abstrações Application (próxima)
+## ✅ Fase 2 — Abstrações Application (concluída)
 
-- [ ] `DbSet<Campanha>` em `IAppDbContext`.
-- [ ] `IDateTimeProvider` (Application) + `SystemDateTimeProvider` (Infra).
-- [ ] `ICurrentUser` (`UserId`, `Roles`, `EstaNaRole(string)`) — implementação Infra extrai de `HttpContext.User`.
-- [ ] `IEntityTypeConfiguration<Campanha>` na Infra (mapping + index `IdGestor`/`Status`).
-- [ ] Códigos novos em `CampanhaErrorCodes` (Application) + textos em `Localization/{pt-BR,en}.json`.
+**Status:** ✔️ Concluída · 57 testes passando
 
-**Testes:** unit do `SystemDateTimeProvider` (UTC), unit do `CurrentUser` extraindo claim `sub`/`roles`.
+**Entregues:**
+- `src/Esperanca.Campanha.Application/_Shared/IDateTimeProvider.cs`
+- `src/Esperanca.Campanha.Application/_Shared/ICurrentUser.cs` (`UserId`, `Roles`, `EstaNaRole(string)`)
+- `src/Esperanca.Campanha.Application/_Shared/Localization/CampanhaErrorCodes.cs` (+`ErroValidacao:900`, `CampanhaNaoEncontrada:901`, `AcessoNaoAutorizado:902`)
+- `src/Esperanca.Campanha.Application/_Shared/Results/Result.cs` (+`Forbidden`)
+- `src/Esperanca.Campanha.Infrastructure/_Shared/SystemDateTimeProvider.cs`
+- `src/Esperanca.Campanha.Infrastructure/_Shared/CurrentUserAccessor.cs` (extrai `ClaimTypes.NameIdentifier` / `"sub"` e `ClaimTypes.Role`)
+- `src/Esperanca.Campanha.Infrastructure/Campanhas/CampanhaConfiguration.cs` (mapping + índices `IdGestor`/`Status`)
+- `CampanhaInfrastructureModule`: registra `IDateTimeProvider`, `ICurrentUser`, `IHttpContextAccessor`
+- `test/Esperanca.Campanha.UnitTests/Infrastructure/DateTimeProvider/SystemDateTimeProviderTest.cs` (2 cenários)
+- `test/Esperanca.Campanha.UnitTests/Infrastructure/CurrentUser/CurrentUserAccessorTest.cs` (10 cenários)
+- `Directory.Packages.props` + `UnitTests.csproj`: adicionado `MockQueryable.NSubstitute 7.0.0` + referência a Infrastructure
 
 ---
 
-## ⏭️ Fase 3 — Slices Write (CRUD da Campanha)
+## ✅ Fase 3 — Slices Write (CRUD da Campanha) (concluída)
 
-Cada slice = `Command` + `Handler` + `Validator` + DTO + testes (handler com EF InMemory + validator com FluentValidation.TestHelper).
+**Status:** ✔️ Concluída · 89 testes passando
 
-- [ ] `CriarCampanha` — POST `/api/campanhas`.
-- [ ] `EditarCampanha` — PUT `/api/campanhas/{id}` (só `Cadastrada`).
-- [ ] `AtivarCampanha` — POST `/.../ativar`.
-- [ ] `ProrrogarCampanha` — POST `/.../prorrogar`.
-- [ ] `CancelarCampanha` — POST `/.../cancelar`.
-
-**Autorização:** `[Authorize(Roles = "GestorONG")]` no controller + checagem `IdGestor == currentUser.UserId` no handler (404 se outra pessoa).
+**Entregues:**
+- `src/Esperanca.Campanha.Application/Campanhas/_Shared/CampanhaDto.cs`
+- `src/Esperanca.Campanha.Application/Campanhas/Criar/{CriarCampanhaCommand,Handler,Validator}.cs`
+- `src/Esperanca.Campanha.Application/Campanhas/Editar/{EditarCampanhaCommand,Handler,Validator}.cs`
+- `src/Esperanca.Campanha.Application/Campanhas/Ativar/{AtivarCampanhaCommand,Handler}.cs`
+- `src/Esperanca.Campanha.Application/Campanhas/Prorrogar/{ProrrogarCampanhaCommand,Handler,Validator}.cs`
+- `src/Esperanca.Campanha.Application/Campanhas/Cancelar/{CancelarCampanhaCommand,Handler}.cs`
+- `src/Esperanca.Campanha.Infrastructure/_Shared/ResourceAppLocalizer.cs` (IAppLocalizer + JSON embutido)
+- `src/Esperanca.Campanha.WebApi/Campanhas/CampanhaController.cs` (`[Authorize(Roles = "GestorONG")]`)
+- `src/Esperanca.Campanha.WebApi/_Shared/Extensions/ResultExtensions.cs`
+- `test/...Application/Campanhas/{Criar,Editar,Ativar,Prorrogar,Cancelar}/` (handlers + validators)
+- Localizações `pt-BR.json`/`en.json` expandidas com códigos `Campanha:101`–`302`
 
 ---
 
@@ -128,6 +140,6 @@ Cada slice = `Command` + `Handler` + `Validator` + DTO + testes (handler com EF 
 
 ## Mapa rápido — onde paramos
 
-- **Última fase concluída:** Fase 1 (Domain).
-- **Próximo passo:** Fase 2 (abstrações da Application + `IDateTimeProvider` + `ICurrentUser` + mapping EF).
-- **Para retomar:** rode `dotnet test test/Esperanca.Campanha.UnitTests` para confirmar baseline verde, depois siga a checklist da Fase 2.
+- **Última fase concluída:** Fase 3 (slices Write — CriarCampanha, EditarCampanha, AtivarCampanha, ProrrogarCampanha, CancelarCampanha).
+- **Próximo passo:** Fase 4 (slices Read — ObterCampanha, ListarCampanhasGestor).
+- **Para retomar:** rode `dotnet test test/Esperanca.Campanha.UnitTests` para confirmar baseline verde (89 testes), depois siga a checklist da Fase 4.

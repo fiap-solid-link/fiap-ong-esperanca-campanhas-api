@@ -10,4 +10,8 @@
         <ProjectReference Include="..\Esperanca.Campanha.Domain\Esperanca.Campanha.Domain.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+        <EmbeddedResource Include="_Shared\Localization\*.json" />
+    </ItemGroup>
+
 </Project>

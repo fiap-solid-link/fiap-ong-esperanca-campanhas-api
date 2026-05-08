@@ -1,6 +1,26 @@
 {
   "culture": "pt-BR",
   "texts": {
-    "Campanha:001": "Usuário não encontrado."
+    "Campanha:001": "Usuário não encontrado.",
+    "Campanha:101": "Título é obrigatório.",
+    "Campanha:102": "Descrição é obrigatória.",
+    "Campanha:103": "A data de encerramento deve ser posterior à data atual.",
+    "Campanha:104": "A data de início não pode ser posterior à data de encerramento.",
+    "Campanha:105": "A meta financeira deve ser maior que zero.",
+    "Campanha:201": "Edição permitida apenas em campanhas no status Cadastrada.",
+    "Campanha:202": "Ativação permitida apenas em campanhas no status Cadastrada.",
+    "Campanha:203": "Prorrogação permitida apenas em campanhas no status Em Andamento.",
+    "Campanha:204": "A nova data de encerramento deve ser posterior à data atual de encerramento.",
+    "Campanha:205": "Cancelamento permitido apenas em campanhas no status Em Andamento.",
+    "Campanha:206": "Conclusão permitida apenas em campanhas no status Em Andamento.",
+    "Campanha:207": "Conclusão por data exige que a data de encerramento já tenha expirado.",
+    "Campanha:208": "O modo de encerramento da campanha não permite conclusão por data.",
+    "Campanha:209": "Conclusão por meta exige que o valor arrecadado seja maior ou igual à meta.",
+    "Campanha:210": "O modo de encerramento da campanha não permite conclusão por meta.",
+    "Campanha:301": "Arrecadação só pode ser registrada em campanhas no status Em Andamento.",
+    "Campanha:302": "O valor da arrecadação deve ser positivo.",
+    "Campanha:900": "Erro de validação.",
+    "Campanha:901": "Campanha não encontrada.",
+    "Campanha:902": "Acesso não autorizado."
   }
 }

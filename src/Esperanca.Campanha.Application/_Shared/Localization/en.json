@@ -1,6 +1,26 @@
 {
   "culture": "en",
   "texts": {
-    "Campanha:001": "User not found."
+    "Campanha:001": "User not found.",
+    "Campanha:101": "Title is required.",
+    "Campanha:102": "Description is required.",
+    "Campanha:103": "End date must be later than current date.",
+    "Campanha:104": "Start date cannot be later than end date.",
+    "Campanha:105": "Financial goal must be greater than zero.",
+    "Campanha:201": "Editing is only allowed for campaigns with Registered status.",
+    "Campanha:202": "Activation is only allowed for campaigns with Registered status.",
+    "Campanha:203": "Extension is only allowed for campaigns with In Progress status.",
+    "Campanha:204": "New end date must be later than the current end date.",
+    "Campanha:205": "Cancellation is only allowed for campaigns with In Progress status.",
+    "Campanha:206": "Conclusion is only allowed for campaigns with In Progress status.",
+    "Campanha:207": "Date-based conclusion requires the end date to have expired.",
+    "Campanha:208": "Campaign closing mode does not allow date-based conclusion.",
+    "Campanha:209": "Goal-based conclusion requires the amount raised to be greater than or equal to the goal.",
+    "Campanha:210": "Campaign closing mode does not allow goal-based conclusion.",
+    "Campanha:301": "Fundraising can only be registered for campaigns with In Progress status.",
+    "Campanha:302": "Fundraising amount must be positive.",
+    "Campanha:900": "Validation error.",
+    "Campanha:901": "Campaign not found.",
+    "Campanha:902": "Unauthorized access."
   }
 }

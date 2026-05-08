@@ -26,4 +26,5 @@ public class Result<T>
     public static Result<T> Fail(string erro, int statusCode = 400) => new(erro, statusCode);
     public static Result<T> NotFound(string erro) => new(erro, 404);
     public static Result<T> Unauthorized(string erro) => new(erro, 401);
+    public static Result<T> Forbidden(string erro) => new(erro, 403);
 }
