@@ -23,6 +23,7 @@ public class Result<T>
 
     public static Result<T> Ok(T dados) => new(dados);
     public static Result<T> Created(T dados) => new(dados, 201);
+    public static Result<T> Accepted(T dados) => new(dados, 202);
     public static Result<T> Fail(string erro, int statusCode = 400) => new(erro, statusCode);
     public static Result<T> NotFound(string erro) => new(erro, 404);
     public static Result<T> Unauthorized(string erro) => new(erro, 401);

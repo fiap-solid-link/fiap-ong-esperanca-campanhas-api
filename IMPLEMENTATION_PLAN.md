@@ -94,18 +94,29 @@
 
 ---
 
-## ⏭️ Fase 6 — Doações (intenção, síncrona)
+## ✅ Fase 6 — Doações (intenção, síncrona) (concluída)
 
-- [ ] Contrato `DoacaoRecebidaEvent` (record) em `Application/Doacoes/Contracts`.
-- [ ] Abstração `IDoacaoPublisher`.
-- [ ] Slice `EnviarIntencaoDoacao`:
-  - Valida campanha existe + `EmAndamento` + `Valor > 0`.
-  - Pega `IdDoador` do `ICurrentUser`, gera `IdDoacao` e `IdempotencyKey` (Guid).
-  - Publica via `IDoacaoPublisher` → `202 Accepted`.
-- [ ] `DoacaoController` com `[Authorize(Roles = "Doador,GestorONG")]`.
-- [ ] **Infra**: `RabbitMqDoacaoPublisher` + bootstrap topologia (exchange `esperanca.doacoes` direct, fila `doacoes-recebidas` com DLX `esperanca.doacoes.dlx` → `doacoes-recebidas-dlq`).
-- [ ] Config `RabbitMq:*`.
-- [ ] **Teste de contrato**: serializar/desserializar `DoacaoRecebidaEvent` preservando todos os campos.
+**Status:** ✔️ Concluída · 117 testes passando
+
+**Entregues:**
+- `src/Esperanca.Campanha.Application/Doacoes/_Shared/Contracts/DoacaoRecebidaEvent.cs` — record com `IdDoacao`, `IdCampanha`, `IdDoador`, `Valor`, `DataIntencao`, `IdempotencyKey`.
+- `src/Esperanca.Campanha.Application/Doacoes/_Shared/IDoacaoPublisher.cs` — abstração `PublicarRecebidaAsync(evento, ct)`.
+- `src/Esperanca.Campanha.Application/Doacoes/EnviarIntencao/{EnviarIntencaoDoacaoCommand,Handler,Validator,IntencaoDoacaoDto}.cs`:
+  - Valida `Valor > 0` (validator) e `IdCampanha` não vazio.
+  - Handler busca campanha (404 se inexistente), confere `Status == EmAndamento` (400 reusando `Campanha:301` `ArrecadacaoSomenteEmAndamento`), gera `IdDoacao`/`IdempotencyKey`, publica e retorna **202 Accepted** com `IntencaoDoacaoDto(IdDoacao, IdempotencyKey, DataIntencao)`.
+- `src/Esperanca.Campanha.Application/_Shared/Results/Result.cs` — adicionado `Accepted(T)` (202).
+- `src/Esperanca.Campanha.WebApi/Doacoes/DoacaoController.cs` — `POST /api/doacoes` com `[Authorize(Roles = "Doador,GestorONG")]`.
+- **Infra RabbitMQ** (`Infrastructure/Doacoes/RabbitMq/`):
+  - `RabbitMqOptions` (Host/Port/User/Password/VirtualHost/Exchange/Queue/RoutingKey/DeadLetterExchange/DeadLetterQueue).
+  - `RabbitMqDoacaoPublisher` (singleton, lazy-init de connection/channel) declara topologia idempotentemente na primeira publicação: exchange `esperanca.doacoes` (direct, durable), fila `doacoes-recebidas` (durable, com `x-dead-letter-exchange = esperanca.doacoes.dlx`), DLX `esperanca.doacoes.dlx` (fanout) e DLQ `doacoes-recebidas-dlq`. Mensagens persistentes, `MessageId = IdDoacao`, `CorrelationId = IdempotencyKey`.
+  - Registrado em `CampanhaInfrastructureModule` via `services.AddSingleton<IDoacaoPublisher, RabbitMqDoacaoPublisher>()`.
+  - Pacote `RabbitMQ.Client 7.0.0` adicionado ao `Directory.Packages.props` e ao csproj de Infrastructure.
+  - `appsettings.json` ganhou seção `RabbitMq:*` com defaults para localhost/guest.
+- **Testes** (`test/.../Application/Doacoes/`):
+  - `EnviarIntencao/EnviarIntencaoDoacaoHandlerTest.cs` — 4 cenários (publica + retorna 202; campanha não encontrada; campanha cadastrada → 400; publisher exception propaga).
+  - `EnviarIntencao/EnviarIntencaoDoacaoValidatorTest.cs` — 4 cenários (válido, valor zero, valor negativo, IdCampanha vazio).
+  - `_Shared/Contracts/DoacaoRecebidaEventContractTest.cs` — round-trip JSON, presença de todos os campos, leitura de payload externo (interoperabilidade com worker).
+  - Mock `DoacaoPublisherMock` em `Application/Doacoes/EnviarIntencao/Mocks/` segue convenção `Setup*` fluente + `Verify*` void.
 
 ---
 
@@ -152,6 +163,6 @@
 
 ## Mapa rápido — onde paramos
 
-- **Última fase concluída:** Fase 5 (Infrastructure write side + JWT + smoke `WebApplicationFactory`).
-- **Próximo passo:** Fase 6 (Doações — intenção síncrona com `IDoacaoPublisher`/RabbitMQ + `DoacaoController` + teste de contrato do `DoacaoRecebidaEvent`).
-- **Para retomar:** rode `dotnet test test/Esperanca.Campanha.UnitTests` para confirmar baseline verde (106 testes), depois siga a checklist da Fase 6.
+- **Última fase concluída:** Fase 6 (Doações — intenção síncrona, `IDoacaoPublisher`, `RabbitMqDoacaoPublisher`, `DoacaoController`, teste de contrato).
+- **Próximo passo:** Fase 7 (Consumer `DoacaoProcessadaEvent` + idempotência via `arrecadacoes_processadas` + policy de encerramento por meta).
+- **Para retomar:** rode `dotnet test test/Esperanca.Campanha.UnitTests` para confirmar baseline verde (117 testes), depois siga a checklist da Fase 7.
