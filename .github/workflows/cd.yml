@@ -1,0 +1,11 @@
+# CD pipeline — a ser implementado quando a infraestrutura de deploy estiver pronta.
+name: CD - Build & Push
+
+on:
+  workflow_dispatch:
+
+jobs:
+  placeholder:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "CD pipeline ainda não configurado."
