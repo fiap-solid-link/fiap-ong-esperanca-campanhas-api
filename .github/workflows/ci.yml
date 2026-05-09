@@ -19,10 +19,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup .NET 8
+      - name: Setup .NET 10
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.0.x
+          dotnet-version: 10.0.x
 
       - name: Install SonarScanner for .NET
         run: dotnet tool install --global dotnet-sonarscanner
@@ -47,10 +47,10 @@ jobs:
             /d:sonar.exclusions="**/.github/**,**/ci/**,**/cd/**,**/build/**,**/test/**"
 
       - name: Restore
-        run: dotnet restore Esperanca.Campanha.WebApi.sln
+        run: dotnet restore Esperanca.Campanha.sln
 
       - name: Build
-        run: dotnet build Esperanca.Campanha.WebApi.sln --configuration Release --no-restore
+        run: dotnet build Esperanca.Campanha.sln --configuration Release --no-restore
 
       - name: Test with coverage (OpenCover)
         run: |
