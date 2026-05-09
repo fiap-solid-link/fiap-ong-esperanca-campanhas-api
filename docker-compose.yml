@@ -1,27 +1,50 @@
 services:
-  postgres-campanhas:
+  postgres:
     image: postgres:16-alpine
-    container_name: esperanca-postgres-campanhas
+    container_name: esperanca-postgres
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: campanhas_db
+      POSTGRES_DB: campanha_db
     ports:
       - "5432:5432"
     volumes:
-      - postgres_campanhas_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
       retries: 5
 
-  rabbitmq:
-    image: rabbitmq:3-management-alpine
-    container_name: esperanca-rabbitmq
+  mongo:
+    image: mongo:7
+    container_name: esperanca-mongo
     ports:
-      - "5672:5672"   # Porta onde a API envia as mensagens
-      - "15672:15672" # Porta do painel visual no navegador
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+      - ./docker/mongo/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: esperanca-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
-  postgres_campanhas_data:
+  postgres_data:
+  mongo_data:
