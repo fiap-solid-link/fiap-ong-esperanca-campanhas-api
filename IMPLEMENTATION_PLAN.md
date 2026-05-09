@@ -189,17 +189,27 @@
 
 ---
 
-## ⏭️ Fase 10 — Cross-cutting
+## ✅ Fase 10 — Cross-cutting (concluída)
 
-- [ ] `/health` agregando Postgres + Mongo + RabbitMQ (`Microsoft.Extensions.Diagnostics.HealthChecks`).
-- [ ] Serilog estruturado + `correlation-id` propagado em headers RabbitMQ.
-- [ ] Swagger com botão Bearer.
-- [ ] `docker-compose.yml` (Postgres + Mongo + RabbitMQ + API) revisado e README de execução.
+**Status:** ✔️ Concluída · 136 testes passando
+
+**Entregues:**
+- `src/Esperanca.Campanha.Infrastructure/HealthChecks/MongoDbHealthCheck.cs` — `IHealthCheck` customizado: faz `ping` no MongoDB via `IMongoClient` já registrado no DI (sem pacote externo, evita conflito com `MongoDB.Driver 3.x`).
+- `src/Esperanca.Campanha.Infrastructure/HealthChecks/RabbitMqHealthCheck.cs` — `IHealthCheck` customizado: abre/fecha conexão com o broker via `RabbitMQ.Client 7.x` async (sem pacote externo, evita conflito de API com versões legadas).
+- `CampanhaInfrastructureModule` registra os dois checks via `AddHealthChecks()` com tags `db`/`messaging`.
+- `CampanhaWebApiModule`: `AddNpgSql` continua no módulo WebApi; novo método estático `MapHealthEndpoint` configura `/health` com resposta JSON detalhada (status + checks + durations + tags).
+- `src/Esperanca.Campanha.WebApi/_Shared/Middleware/CorrelationIdMiddleware.cs` — gera ou propaga `X-Correlation-Id` do header de request; ecoa no header de resposta via `OnStarting`; enriquece o `LogContext` do Serilog para toda a requisição.
+- `Program.cs` atualizado: `UseMiddleware<CorrelationIdMiddleware>()` + `UseSerilogRequestLogging()` antes dos demais middlewares; chama `MapHealthEndpoint` em vez do `MapHealthChecks` simples.
+- `appsettings.json`: template Serilog atualizado para `"[{Timestamp:HH:mm:ss} {Level:u3}] {CorrelationId} {Message:lj}{NewLine}{Exception}"`.
+- `RabbitMqDoacaoPublisher`: injeta `IHttpContextAccessor`; lê `X-Correlation-Id` do `HttpContext.Items` e propaga como header AMQP (`byte[]`) em `BasicProperties.Headers`.
+- `RabbitMqDoacaoProcessadaConsumer`: método `ExtractCorrelationId` lê header AMQP `X-Correlation-Id`; enriquece o `LogContext` antes de processar cada mensagem.
+- `Serilog 4.2.0` adicionado ao `Directory.Packages.props` e ao `Infrastructure.csproj` (necessário para `LogContext.PushProperty` no consumer/background service).
+- `docker-compose.yml` revisado: serviço `rabbitmq:3.13-management-alpine` com healthcheck (`check_port_connectivity`), porta broker `5672` e console de admin `15672`; `campanha-api` depende dos 3 serviços (healthy); variável `ConnectionStrings__CampanhaDb` corrigida (maiúscula) + variáveis `RabbitMq__*` adicionadas.
+- `README.md` criado: execução local e Docker, tabela de endpoints, variáveis de ambiente, testes e migrations.
 
 ---
 
 ## Mapa rápido — onde paramos
 
-- **Última fase concluída:** Fase 9 (Transparência — read side MongoDB, 3 endpoints públicos, seed mock).
-- **Próximo passo:** Fase 10 (Cross-cutting — `/health` agregando Postgres+Mongo+RabbitMQ, Serilog estruturado com correlation-id, Swagger com botão Bearer, README de execução).
-- **Para retomar:** rode `dotnet test test/Esperanca.Campanha.UnitTests` para confirmar baseline verde (136 testes), depois siga a checklist da Fase 10.
+- **Todas as 10 fases concluídas.** 136 testes passando.
+- **Para executar:** `docker compose up -d --build` sobe Postgres + Mongo + RabbitMQ + API na porta 5010.

@@ -1,6 +1,8 @@
+using System.Text;
 using System.Text.Json;
 using Esperanca.Campanha.Application.Doacoes._Shared;
 using Esperanca.Message.Events;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
@@ -9,6 +11,7 @@ namespace Esperanca.Campanha.Infrastructure.Doacoes.RabbitMq;
 
 public sealed class RabbitMqDoacaoPublisher(
     IOptions<RabbitMqOptions> options,
+    IHttpContextAccessor httpContextAccessor,
     ILogger<RabbitMqDoacaoPublisher> logger)
     : IDoacaoPublisher, IAsyncDisposable
 {
@@ -24,13 +27,17 @@ public sealed class RabbitMqDoacaoPublisher(
 
         var body = JsonSerializer.SerializeToUtf8Bytes(evento);
 
+        var correlationId = httpContextAccessor.HttpContext?.Items["X-Correlation-Id"]?.ToString()
+                            ?? Guid.NewGuid().ToString("N");
+
         var props = new BasicProperties
         {
-            ContentType  = "application/json",
-            DeliveryMode = DeliveryModes.Persistent,
-            MessageId    = evento.IdDoacao.ToString(),
+            ContentType   = "application/json",
+            DeliveryMode  = DeliveryModes.Persistent,
+            MessageId     = evento.IdDoacao.ToString(),
             CorrelationId = evento.IdempotencyKey.ToString(),
-            Timestamp    = new AmqpTimestamp(DateTimeOffset.UtcNow.ToUnixTimeSeconds())
+            Timestamp     = new AmqpTimestamp(DateTimeOffset.UtcNow.ToUnixTimeSeconds()),
+            Headers       = new Dictionary<string, object?> { ["X-Correlation-Id"] = Encoding.UTF8.GetBytes(correlationId) }
         };
 
         await channel.BasicPublishAsync(

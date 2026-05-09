@@ -1,6 +1,9 @@
+using System.Text.Json;
 using Esperanca.Campanha.Application;
 using Esperanca.Campanha.Infrastructure;
 using Esperanca.Campanha.WebApi._Shared.Authentication;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.OpenApi.Models;
 
 namespace Esperanca.Campanha.WebApi;
@@ -68,12 +71,40 @@ public static class CampanhaWebApiModule
             options.OrderActionsBy(apiDesc => apiDesc.GroupName);
         });
 
-        // Health Checks
+        // Health Checks — PostgreSQL (Mongo e RabbitMQ registrados em CampanhaInfrastructureModule)
         services.AddHealthChecks()
             .AddNpgSql(configuration.GetConnectionString("CampanhaDb")!,
                 name: "postgresql",
                 tags: ["db", "ready"]);
 
         return services;
+    }
+
+    public static void MapHealthEndpoint(WebApplication app)
+    {
+        app.MapHealthChecks("/health", new HealthCheckOptions
+        {
+            ResponseWriter = async (ctx, report) =>
+            {
+                ctx.Response.ContentType = "application/json";
+                var result = new
+                {
+                    status   = report.Status.ToString(),
+                    duration = report.TotalDuration,
+                    checks   = report.Entries.Select(e => new
+                    {
+                        name        = e.Key,
+                        status      = e.Value.Status.ToString(),
+                        description = e.Value.Description,
+                        duration    = e.Value.Duration,
+                        tags        = e.Value.Tags
+                    })
+                };
+                await ctx.Response.WriteAsJsonAsync(result, new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                });
+            }
+        });
     }
 }

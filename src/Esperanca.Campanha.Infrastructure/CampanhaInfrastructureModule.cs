@@ -5,6 +5,7 @@ using Esperanca.Campanha.Application.Transparencia._Shared;
 using Esperanca.Campanha.Infrastructure._Shared;
 using Esperanca.Campanha.Infrastructure.Campanhas.Scheduler;
 using Esperanca.Campanha.Infrastructure.Doacoes.RabbitMq;
+using Esperanca.Campanha.Infrastructure.HealthChecks;
 using Esperanca.Campanha.Infrastructure.Transparencia.Mongo;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -46,6 +47,11 @@ public static class CampanhaInfrastructureModule
             new MongoClient(configuration.GetConnectionString("DoacoesMongo")
                             ?? throw new InvalidOperationException("ConnectionStrings:DoacoesMongo é obrigatório.")));
         services.AddScoped<ITransparenciaReadRepository, TransparenciaMongoRepository>();
+
+        // Health checks de infra
+        services.AddHealthChecks()
+            .AddCheck<MongoDbHealthCheck>("mongodb", tags: ["db", "ready"])
+            .AddCheck<RabbitMqHealthCheck>("rabbitmq", tags: ["messaging", "ready"]);
 
         return services;
     }

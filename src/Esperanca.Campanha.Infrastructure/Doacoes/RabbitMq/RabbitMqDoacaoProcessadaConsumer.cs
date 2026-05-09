@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json;
 using Esperanca.Campanha.Application.Doacoes.ProcessarDoacaoProcessada;
 using Esperanca.Message.Events;
@@ -8,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
+using Serilog.Context;
 
 namespace Esperanca.Campanha.Infrastructure.Doacoes.RabbitMq;
 
@@ -86,34 +88,51 @@ public sealed class RabbitMqDoacaoProcessadaConsumer(
 
         var deliveryTag = ea.DeliveryTag;
 
-        try
-        {
-            var evento = JsonSerializer.Deserialize<DoacaoProcessadaEvent>(ea.Body.Span)
-                         ?? throw new InvalidOperationException("DoacaoProcessadaEvent payload vazio.");
+        var correlationId = ExtractCorrelationId(ea);
 
-            using var scope = scopeFactory.CreateScope();
-            var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
-
-            await mediator.Send(new ProcessarDoacaoProcessadaCommand(
-                evento.IdDoacao,
-                evento.IdCampanha,
-                evento.Valor,
-                evento.DataProcessamento));
-
-            await _channel.BasicAckAsync(deliveryTag, multiple: false);
-        }
-        catch (JsonException jsonEx)
+        using (LogContext.PushProperty("CorrelationId", correlationId))
         {
-            logger.LogError(jsonEx,
-                "Mensagem com payload inválido — descartando para DLQ (deliveryTag={DeliveryTag}).", deliveryTag);
-            await _channel.BasicNackAsync(deliveryTag, multiple: false, requeue: false);
+            try
+            {
+                var evento = JsonSerializer.Deserialize<DoacaoProcessadaEvent>(ea.Body.Span)
+                             ?? throw new InvalidOperationException("DoacaoProcessadaEvent payload vazio.");
+
+                using var scope = scopeFactory.CreateScope();
+                var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
+
+                await mediator.Send(new ProcessarDoacaoProcessadaCommand(
+                    evento.IdDoacao,
+                    evento.IdCampanha,
+                    evento.Valor,
+                    evento.DataProcessamento));
+
+                await _channel.BasicAckAsync(deliveryTag, multiple: false);
+            }
+            catch (JsonException jsonEx)
+            {
+                logger.LogError(jsonEx,
+                    "Mensagem com payload inválido — descartando para DLQ (deliveryTag={DeliveryTag}).", deliveryTag);
+                await _channel.BasicNackAsync(deliveryTag, multiple: false, requeue: false);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex,
+                    "Falha ao processar DoacaoProcessadaEvent — encaminhando para DLQ (deliveryTag={DeliveryTag}).", deliveryTag);
+                await _channel.BasicNackAsync(deliveryTag, multiple: false, requeue: false);
+            }
         }
-        catch (Exception ex)
+    }
+
+    private static string ExtractCorrelationId(BasicDeliverEventArgs ea)
+    {
+        if (ea.BasicProperties.Headers is not null
+            && ea.BasicProperties.Headers.TryGetValue("X-Correlation-Id", out var raw)
+            && raw is byte[] bytes)
         {
-            logger.LogError(ex,
-                "Falha ao processar DoacaoProcessadaEvent — encaminhando para DLQ (deliveryTag={DeliveryTag}).", deliveryTag);
-            await _channel.BasicNackAsync(deliveryTag, multiple: false, requeue: false);
+            return Encoding.UTF8.GetString(bytes);
         }
+
+        return Guid.NewGuid().ToString("N");
     }
 
     public override async Task StopAsync(CancellationToken cancellationToken)

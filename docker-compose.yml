@@ -30,6 +30,21 @@ services:
       timeout: 5s
       retries: 5
 
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: esperanca-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   campanha-api:
     build:
       context: .
@@ -37,18 +52,24 @@ services:
     container_name: esperanca-campanha-api
     environment:
       ASPNETCORE_ENVIRONMENT: Development
-      ConnectionStrings__campanhaDb: "Host=postgres;Port=5432;Database=campanha_db;Username=postgres;Password=postgres"
+      ConnectionStrings__CampanhaDb: "Host=postgres;Port=5432;Database=campanha_db;Username=postgres;Password=postgres"
       ConnectionStrings__DoacoesMongo: "mongodb://mongo:27017"
       Jwt__SecretKey: "SuperSecretKey-ParaDesenvolvimento-MinimoDE32Chars!"
       Jwt__Issuer: "esperanca-campanha-api"
       Jwt__Audience: "esperanca-platform"
       Jwt__AccessTokenExpirationMinutes: "30"
+      RabbitMq__Host: "rabbitmq"
+      RabbitMq__Port: "5672"
+      RabbitMq__User: "guest"
+      RabbitMq__Password: "guest"
     ports:
       - "5010:8080"
     depends_on:
       postgres:
         condition: service_healthy
       mongo:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
 
 volumes:

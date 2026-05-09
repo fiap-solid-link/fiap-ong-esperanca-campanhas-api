@@ -11,13 +11,15 @@ CampanhaWebApiModule.ConfigureServices(builder.Services, builder.Configuration);
 
 var app = builder.Build();
 
+app.UseMiddleware<CorrelationIdMiddleware>();
+app.UseSerilogRequestLogging();
 app.UseMiddleware<ValidationExceptionMiddleware>();
 app.UseSwagger();
 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Esperanca Campanha API v1"));
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
-app.MapHealthChecks("/health");
+CampanhaWebApiModule.MapHealthEndpoint(app);
 
 app.Run();
 
