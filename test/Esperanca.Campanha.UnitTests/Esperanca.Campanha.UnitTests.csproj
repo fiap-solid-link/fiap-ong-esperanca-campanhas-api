@@ -1,9 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <IsPackable>false</IsPackable>
+        <TargetFramework>$(TargetFramework)</TargetFramework>
+        <LangVersion>$(LangVersion)</LangVersion>
+        <Nullable>$(Nullable)</Nullable>
+        <ImplicitUsings>$(ImplicitUsings)</ImplicitUsings>
+        <ManagePackageVersionsCentrally>$(ManagePackageVersionsCentrally)</ManagePackageVersionsCentrally>
+        <IsTestProject>$(IsTestProject)</IsTestProject>
     </PropertyGroup>
-
+    
     <ItemGroup>
         <PackageReference Include="coverlet.collector" />
         <PackageReference Include="FluentValidation" />
