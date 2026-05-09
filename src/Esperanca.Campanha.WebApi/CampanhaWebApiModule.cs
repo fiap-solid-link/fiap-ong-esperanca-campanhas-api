@@ -4,7 +4,7 @@ using Esperanca.Campanha.Infrastructure;
 using Esperanca.Campanha.WebApi._Shared.Authentication;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 
 namespace Esperanca.Campanha.WebApi;
 
@@ -45,18 +45,11 @@ public static class CampanhaWebApiModule
                 Description  = "Insira o token JWT"
             });
 
-            options.AddSecurityRequirement(new OpenApiSecurityRequirement
+            options.AddSecurityRequirement(doc => new OpenApiSecurityRequirement
             {
                 {
-                    new OpenApiSecurityScheme
-                    {
-                        Reference = new OpenApiReference
-                        {
-                            Type = ReferenceType.SecurityScheme,
-                            Id = "Bearer"
-                        }
-                    },
-                    Array.Empty<string>()
+                    new OpenApiSecuritySchemeReference("Bearer", doc),
+                    []
                 }
             });
 

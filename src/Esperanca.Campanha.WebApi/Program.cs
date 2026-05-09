@@ -1,3 +1,4 @@
+using Esperanca.Campanha.Infrastructure._Shared;
 using Esperanca.Campanha.WebApi;
 using Esperanca.Campanha.WebApi._Shared.Middleware;
 using Serilog;
@@ -10,6 +11,8 @@ builder.Host.UseSerilog((context, config) =>
 CampanhaWebApiModule.ConfigureServices(builder.Services, builder.Configuration);
 
 var app = builder.Build();
+
+await DatabaseMigrator.MigrateAsync(app.Services);
 
 app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseSerilogRequestLogging();
