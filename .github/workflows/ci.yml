@@ -54,11 +54,11 @@ jobs:
 
       - name: Test with coverage (OpenCover)
         run: |
-          dotnet test test/Esperanca.Campanha.UnitTests/Esperanca.Campanha.UnitTests.csproj \
-            --configuration Release --no-build --logger "trx;LogFileName=test-results.trx" \
-            /p:CollectCoverage=true \
-            /p:CoverletOutput=${{ github.workspace }}/test/Esperanca.Campanha.UnitTests/TestResults/coverage.opencover.xml \
-            /p:CoverletOutputFormat=opencover
+          dotnet test Esperanca.Campanha.sln \
+            --configuration Release --no-build \
+            --collect:"XPlat Code Coverage" \
+            --results-directory TestResults \
+            -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
 
       # finaliza e envia a análise para o SonarCloud
       - name: SonarCloud End
