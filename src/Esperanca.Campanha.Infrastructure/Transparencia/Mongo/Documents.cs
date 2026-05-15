@@ -1,8 +1,9 @@
+using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
 namespace Esperanca.Campanha.Infrastructure.Transparencia.Mongo;
 
-internal sealed class PainelMacroDocument
+internal sealed class PainelMacroDocument : BaseDocument
 {
     [BsonElement("totalArrecadado")]
     public decimal TotalArrecadado { get; init; }
@@ -35,9 +36,10 @@ internal sealed class TopDoadorDocument
     public int QuantidadeDoacoes { get; init; }
 }
 
-internal sealed class CampanhaListaDocument
+internal sealed class CampanhaListaDocument : BaseDocument
 {
     [BsonElement("idCampanha")]
+    [BsonGuidRepresentation(GuidRepresentation.Standard)]
     public Guid IdCampanha { get; init; }
 
     [BsonElement("titulo")]
@@ -62,9 +64,10 @@ internal sealed class CampanhaListaDocument
     public DateTime? DataEncerramento { get; init; }
 }
 
-internal sealed class CampanhaDetalheDocument
+internal sealed class CampanhaDetalheDocument : BaseDocument
 {
     [BsonElement("idCampanha")]
+    [BsonGuidRepresentation(GuidRepresentation.Standard)]
     public Guid IdCampanha { get; init; }
 
     [BsonElement("titulo")]
