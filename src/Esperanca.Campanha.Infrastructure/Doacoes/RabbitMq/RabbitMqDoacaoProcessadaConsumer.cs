@@ -104,6 +104,7 @@ public sealed class RabbitMqDoacaoProcessadaConsumer(
                     evento.IdDoacao,
                     evento.IdCampanha,
                     evento.Valor,
+                    evento.ValorTotalArrecadado,
                     evento.DataProcessamento));
 
                 await _channel.BasicAckAsync(deliveryTag, multiple: false);

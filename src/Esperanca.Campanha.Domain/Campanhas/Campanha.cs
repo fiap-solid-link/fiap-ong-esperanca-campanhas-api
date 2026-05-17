@@ -145,7 +145,27 @@ public class Campanha
         Status = StatusCampanha.Concluida;
     }
 
+    public void ConcluirPorMeta(decimal valorTotalArrecadado)
+    {
+        if (Status != StatusCampanha.EmAndamento)
+            throw new DomainException(CampanhaErros.ConclusaoSomenteEmAndamento,
+                "Conclusão permitida apenas em campanhas no status EmAndamento.");
+
+        if (!AtingiuMetaComValorTotal(valorTotalArrecadado))
+            throw new DomainException(CampanhaErros.ConclusaoPorMetaExigeMetaAtingida,
+                "Conclusão por meta exige ValorTotalArrecadado >= MetaFinanceira.");
+
+        if (!ModoPermiteEncerramentoPorMeta())
+            throw new DomainException(CampanhaErros.ConclusaoPorMetaExigeModoCompativel,
+                "Modo de encerramento da campanha não permite conclusão por meta.");
+
+        Status = StatusCampanha.Concluida;
+    }
+
     public bool AtingiuMeta => ValorArrecadado >= MetaFinanceira;
+
+    public bool AtingiuMetaComValorTotal(decimal valorTotalArrecadado) =>
+        valorTotalArrecadado >= MetaFinanceira;
 
     public bool PodeConcluirPorData(DateTime agora) =>
         Status == StatusCampanha.EmAndamento
@@ -155,6 +175,11 @@ public class Campanha
     public bool PodeConcluirPorMeta() =>
         Status == StatusCampanha.EmAndamento
         && AtingiuMeta
+        && ModoPermiteEncerramentoPorMeta();
+
+    public bool PodeConcluirPorMeta(decimal valorTotalArrecadado) =>
+        Status == StatusCampanha.EmAndamento
+        && AtingiuMetaComValorTotal(valorTotalArrecadado)
         && ModoPermiteEncerramentoPorMeta();
 
     public bool EstaProximaDoVencimento(DateTime agora, int diasLimite)

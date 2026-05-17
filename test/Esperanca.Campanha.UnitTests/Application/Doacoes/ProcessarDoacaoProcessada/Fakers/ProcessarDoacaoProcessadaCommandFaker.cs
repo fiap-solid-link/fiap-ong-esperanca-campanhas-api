@@ -8,5 +8,5 @@ public static class ProcessarDoacaoProcessadaCommandFaker
     private static readonly DateTime Agora = DateTimeProviderMock.DefaultNow;
 
     public static ProcessarDoacaoProcessadaCommand Valid(Guid idCampanha, decimal valor = 100m, Guid? idDoacao = null) =>
-        new(idDoacao ?? Guid.NewGuid(), idCampanha, valor, Agora);
+        new(idDoacao ?? Guid.NewGuid(), idCampanha, valor, ValorTotalArrecadado: 100, Agora);
 }

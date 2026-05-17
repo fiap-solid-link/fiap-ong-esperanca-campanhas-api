@@ -24,7 +24,8 @@ public class AtivarCampanhaHandlerFixture
         Handler = new AtivarCampanhaHandler(
             logger,
             AppDbContextMock.Instance,
-            CurrentUserMock.Instance,
-            localizer);
+            CurrentUserMock.Instance,            
+            localizer,
+            null);
     }
 }

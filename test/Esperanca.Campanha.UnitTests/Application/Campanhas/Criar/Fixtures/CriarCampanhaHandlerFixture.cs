@@ -28,6 +28,7 @@ public class CriarCampanhaHandlerFixture
             AppDbContextMock.Instance,
             CurrentUserMock.Instance,
             DateTimeProviderMock.Instance,
-            localizer);
+            localizer,
+            null);
     }
 }

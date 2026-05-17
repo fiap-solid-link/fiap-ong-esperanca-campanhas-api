@@ -1,7 +1,6 @@
 using Esperanca.Campanha.Application._Shared;
+using Esperanca.Campanha.Application.Transparencia._Shared;
 using Esperanca.Campanha.Domain._Shared;
-using Esperanca.Campanha.Domain.Campanhas;
-using Esperanca.Campanha.Domain.Doacoes;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -11,59 +10,66 @@ namespace Esperanca.Campanha.Application.Doacoes.ProcessarDoacaoProcessada;
 
 public sealed class ProcessarDoacaoProcessadaHandler(
     ILogger<ProcessarDoacaoProcessadaHandler> logger,
-    IAppDbContext dbContext)
+    IAppDbContext dbContext,
+    ITransparenciaProjectionWriter transparenciaProjectionWriter)
     : IRequestHandler<ProcessarDoacaoProcessadaCommand, Unit>
 {
     public async Task<Unit> Handle(ProcessarDoacaoProcessadaCommand command, CancellationToken ct)
     {
-        var jaProcessada = await dbContext.Set<ArrecadacaoProcessada>()
-            .AsNoTracking()
-            .AnyAsync(a => a.IdDoacao == command.IdDoacao, ct);
-
-        if (jaProcessada)
-        {
-            logger.LogInformation(
-                "Doação {IdDoacao} já processada anteriormente — idempotência aplicada.", command.IdDoacao);
-            return Unit.Value;
-        }
-
         var campanha = await dbContext.Set<CampanhaAgg>()
             .FirstOrDefaultAsync(c => c.Id == command.IdCampanha, ct);
 
         if (campanha is null)
         {
             logger.LogWarning(
-                "DoacaoProcessadaEvent recebido para campanha inexistente {IdCampanha}.", command.IdCampanha);
+                "DoacaoProcessadaEvent recebido para campanha inexistente {IdCampanha}.",
+                command.IdCampanha);
+
+            return Unit.Value;
+        }
+
+        if (!campanha.PodeConcluirPorMeta(command.ValorTotalArrecadado))
+        {
+            logger.LogInformation(
+                "Doação {IdDoacao} processada, mas campanha {IdCampanha} ainda não atingiu a meta. ValorTotalArrecadado={ValorTotalArrecadado}, MetaFinanceira={MetaFinanceira}",
+                command.IdDoacao,
+                command.IdCampanha,
+                command.ValorTotalArrecadado,
+                campanha.MetaFinanceira);
+
             return Unit.Value;
         }
 
         try
         {
-            campanha.RegistrarArrecadacao(command.Valor);
-
-            if (campanha.PodeConcluirPorMeta())
-                campanha.ConcluirPorMeta();
+            campanha.ConcluirPorMeta(command.ValorTotalArrecadado);
         }
         catch (DomainException ex)
         {
             logger.LogWarning(
-                "Erro de domínio ao processar doação {IdDoacao} para campanha {IdCampanha}: {Codigo}",
-                command.IdDoacao, command.IdCampanha, ex.Codigo);
+                ex,
+                "Erro de domínio ao concluir campanha {IdCampanha} após doação {IdDoacao}: {Codigo}",
+                command.IdCampanha,
+                command.IdDoacao,
+                ex.Codigo);
+
             throw;
         }
 
-        dbContext.Set<ArrecadacaoProcessada>().Add(
-            ArrecadacaoProcessada.Registrar(
-                command.IdDoacao,
-                command.IdCampanha,
-                command.Valor,
-                command.DataProcessamento));
-
         await dbContext.SaveChangesAsync(ct);
 
+        await transparenciaProjectionWriter.AtualizarStatusCampanhaAsync(
+            campanha.Id,
+            campanha.Status.ToString(),
+            command.DataProcessamento,
+            ct);
+
         logger.LogInformation(
-            "Doação {IdDoacao} aplicada à campanha {IdCampanha}: novo arrecadado={ValorArrecadado}, status={Status}.",
-            command.IdDoacao, command.IdCampanha, campanha.ValorArrecadado, campanha.Status);
+            "Campanha {IdCampanha} concluída após atingir a meta. IdDoacao={IdDoacao}, ValorTotalArrecadado={ValorTotalArrecadado}, Status={Status}.",
+            command.IdCampanha,
+            command.IdDoacao,
+            command.ValorTotalArrecadado,
+            campanha.Status);
 
         return Unit.Value;
     }

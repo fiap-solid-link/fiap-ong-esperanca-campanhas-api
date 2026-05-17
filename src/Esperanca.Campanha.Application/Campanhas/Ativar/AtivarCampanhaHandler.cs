@@ -2,6 +2,7 @@ using Esperanca.Campanha.Application._Shared;
 using Esperanca.Campanha.Application._Shared.Localization;
 using Esperanca.Campanha.Application._Shared.Results;
 using Esperanca.Campanha.Application.Campanhas._Shared;
+using Esperanca.Campanha.Application.Transparencia._Shared;
 using Esperanca.Campanha.Domain._Shared;
 using Esperanca.Campanha.Domain.Campanhas;
 using MediatR;
@@ -15,7 +16,8 @@ public sealed class AtivarCampanhaHandler(
     ILogger<AtivarCampanhaHandler> logger,
     IAppDbContext dbContext,
     ICurrentUser currentUser,
-    IAppLocalizer localizer)
+    IAppLocalizer localizer,
+    ITransparenciaProjectionWriter transparenciaProjectionWriter)
     : IRequestHandler<AtivarCampanhaCommand, Result<CampanhaDto>>
 {
     public async Task<Result<CampanhaDto>> Handle(AtivarCampanhaCommand command, CancellationToken ct)
@@ -37,6 +39,12 @@ public sealed class AtivarCampanhaHandler(
         }
 
         await dbContext.SaveChangesAsync(ct);
+
+        await transparenciaProjectionWriter.AtualizarStatusCampanhaAsync(
+            campanha.Id,
+            campanha.Status.ToString(),
+            null,
+            ct);
 
         return Result<CampanhaDto>.Ok(CampanhaDto.From(campanha));
     }

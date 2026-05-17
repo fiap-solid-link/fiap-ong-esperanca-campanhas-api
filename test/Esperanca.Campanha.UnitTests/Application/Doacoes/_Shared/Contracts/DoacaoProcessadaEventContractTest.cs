@@ -10,6 +10,7 @@ public class DoacaoProcessadaEventContractTest
         IdDoacao:          Guid.Parse("11111111-1111-1111-1111-111111111111"),
         IdCampanha:        Guid.Parse("22222222-2222-2222-2222-222222222222"),
         Valor:             123.45m,
+        ValorTotalArrecadado:123.45m,
         DataProcessamento: new DateTime(2026, 5, 8, 13, 0, 0, DateTimeKind.Utc));
 
     [Fact]

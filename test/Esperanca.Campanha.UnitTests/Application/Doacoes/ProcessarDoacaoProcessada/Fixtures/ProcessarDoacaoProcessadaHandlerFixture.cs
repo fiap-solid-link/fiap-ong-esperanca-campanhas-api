@@ -17,6 +17,6 @@ public class ProcessarDoacaoProcessadaHandlerFixture
 
         Handler = new ProcessarDoacaoProcessadaHandler(
             logger,
-            AppDbContextMock.Instance);
+            AppDbContextMock.Instance, null);
     }
 }
