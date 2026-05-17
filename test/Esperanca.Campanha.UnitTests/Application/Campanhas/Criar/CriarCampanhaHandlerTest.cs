@@ -31,6 +31,7 @@ public class CriarCampanhaHandlerTest
         result.Dados.IdGestor.ShouldBe(fixture.CurrentUserMock.Instance.UserId);
         fixture.AppDbContextMock.VerifyCampanhaAdded();
         fixture.AppDbContextMock.VerifySaveChangesCalled();
+        fixture.TransparenciaProjectionWriterMock.VerifyCriarProjecaoCampanhaCalled();
     }
 
     [Fact]
@@ -50,5 +51,6 @@ public class CriarCampanhaHandlerTest
         result.Erro.ShouldBe(CampanhaErros.DataFimMenorQueAgora);
         fixture.AppDbContextMock.VerifyCampanhaNotAdded();
         fixture.AppDbContextMock.VerifySaveChangesNotCalled();
+        fixture.TransparenciaProjectionWriterMock.VerifyCriarProjecaoCampanhaNotCalled();
     }
 }

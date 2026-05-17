@@ -11,6 +11,7 @@ public class CriarCampanhaHandlerFixture
     public AppDbContextMock AppDbContextMock { get; }
     public CurrentUserMock CurrentUserMock { get; }
     public DateTimeProviderMock DateTimeProviderMock { get; }
+    public TransparenciaProjectionWriterMock TransparenciaProjectionWriterMock { get; }
     public CriarCampanhaHandler Handler { get; }
 
     public CriarCampanhaHandlerFixture()
@@ -18,6 +19,7 @@ public class CriarCampanhaHandlerFixture
         AppDbContextMock = new AppDbContextMock();
         CurrentUserMock = new CurrentUserMock();
         DateTimeProviderMock = new DateTimeProviderMock();
+        TransparenciaProjectionWriterMock = new TransparenciaProjectionWriterMock();
 
         var logger = Substitute.For<ILogger<CriarCampanhaHandler>>();
         var localizer = Substitute.For<IAppLocalizer>();
@@ -29,6 +31,6 @@ public class CriarCampanhaHandlerFixture
             CurrentUserMock.Instance,
             DateTimeProviderMock.Instance,
             localizer,
-            null);
+            TransparenciaProjectionWriterMock.Instance);
     }
 }

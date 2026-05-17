@@ -611,4 +611,58 @@ public class CampanhaTest
         // Assert
         result.ShouldBeFalse();
     }
+
+    [Fact]
+    public void ConcluirPorMeta_WhenValorTotalArrecadadoAtingeMeta_ThenConcludesSuccessfully()
+    {
+        // Arrange
+        var campanha = CampanhaFaker.ValidaEmAndamentoComModo(ModoEncerramento.PorMeta, meta: 100m);
+
+        // Act
+        campanha.ConcluirPorMeta(100m);
+
+        // Assert
+        campanha.Status.ShouldBe(StatusCampanha.Concluida);
+        campanha.ValorArrecadado.ShouldBe(0m);
+    }
+
+    [Fact]
+    public void ConcluirPorMeta_WhenValorTotalArrecadadoNaoAtingeMeta_ThenThrowsDomainException()
+    {
+        // Arrange
+        var campanha = CampanhaFaker.ValidaEmAndamentoComModo(ModoEncerramento.PorMeta, meta: 100m);
+
+        // Act
+        var act = () => campanha.ConcluirPorMeta(50m);
+
+        // Assert
+        Should.Throw<DomainException>(act).Codigo.ShouldBe(CampanhaErros.ConclusaoPorMetaExigeMetaAtingida);
+    }
+
+    [Fact]
+    public void PodeConcluirPorMeta_WhenValorTotalArrecadadoAtingeMetaAndCompatibleMode_ThenReturnsTrue()
+    {
+        // Arrange
+        var campanha = CampanhaFaker.ValidaEmAndamentoComModo(ModoEncerramento.PorMeta, meta: 100m);
+
+        // Act
+        var result = campanha.PodeConcluirPorMeta(100m);
+
+        // Assert
+        result.ShouldBeTrue();
+    }
+
+    [Fact]
+    public void PodeConcluirPorMeta_WhenValorTotalArrecadadoAtingeMetaButModeIsPorData_ThenReturnsFalse()
+    {
+        // Arrange
+        var campanha = CampanhaFaker.ValidaEmAndamentoComModo(ModoEncerramento.PorData, meta: 100m);
+
+        // Act
+        var result = campanha.PodeConcluirPorMeta(100m);
+
+        // Assert
+        result.ShouldBeFalse();
+    }
+
 }
