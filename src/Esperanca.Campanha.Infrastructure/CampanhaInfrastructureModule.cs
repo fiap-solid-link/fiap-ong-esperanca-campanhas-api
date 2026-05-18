@@ -11,9 +11,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Driver;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Esperanca.Campanha.Infrastructure;
 
+[ExcludeFromCodeCoverage]
 public static class CampanhaInfrastructureModule
 {
     public static IServiceCollection ConfigureServices(IServiceCollection services, IConfiguration configuration)
@@ -34,7 +36,7 @@ public static class CampanhaInfrastructureModule
 
         // Mensageria — RabbitMQ
         services.Configure<RabbitMqOptions>(configuration.GetSection(RabbitMqOptions.SectionName));
-        services.AddSingleton<IDoacaoPublisher, RabbitMqDoacaoPublisher>();
+        services.AddSingleton<IDoacaoPublisher, RabbitMqDoacaoPublisher>();        
         services.AddHostedService<RabbitMqDoacaoProcessadaConsumer>();
 
         // Scheduler de encerramento por data
@@ -47,6 +49,7 @@ public static class CampanhaInfrastructureModule
             new MongoClient(configuration.GetConnectionString("DoacoesMongo")
                             ?? throw new InvalidOperationException("ConnectionStrings:DoacoesMongo é obrigatório.")));
         services.AddScoped<ITransparenciaReadRepository, TransparenciaMongoRepository>();
+        services.AddScoped<ITransparenciaProjectionWriter, TransparenciaMongoRepository>();
 
         // Health checks de infra
         services.AddHealthChecks()

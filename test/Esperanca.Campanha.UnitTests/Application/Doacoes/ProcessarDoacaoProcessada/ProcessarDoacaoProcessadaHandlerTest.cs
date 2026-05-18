@@ -8,54 +8,32 @@ namespace Esperanca.Campanha.UnitTests.Application.Doacoes.ProcessarDoacaoProces
 public class ProcessarDoacaoProcessadaHandlerTest
 {
     [Fact]
-    public async Task Handle_WhenDoacaoNova_ThenRegistraArrecadacaoEPersisteIdempotencia()
+    public async Task Handle_WhenValorTotalAindaNaoAtingiuMeta_ThenNaoConcluiNemPersiste()
     {
         // Arrange
         var fixture = new ProcessarDoacaoProcessadaHandlerFixture();
         var campanha = CampanhaFaker.EmAndamento(meta: 1000m);
         fixture.AppDbContextMock
-            .SetupCampanhas([campanha])
-            .SetupArrecadacoesProcessadas([])
-            .SetupSaveChangesSuccess();
+            .SetupCampanhas([campanha]);
 
-        var command = ProcessarDoacaoProcessadaCommandFaker.Valid(campanha.Id, valor: 200m);
-
-        // Act
-        await fixture.Handler.Handle(command, CancellationToken.None);
-
-        // Assert
-        campanha.ValorArrecadado.ShouldBe(200m);
-        campanha.Status.ShouldBe(StatusCampanha.EmAndamento);
-        fixture.AppDbContextMock.VerifyArrecadacaoProcessadaAdded();
-        fixture.AppDbContextMock.VerifySaveChangesCalled();
-    }
-
-    [Fact]
-    public async Task Handle_WhenDoacaoJaProcessada_ThenNaoSomaNoValorArrecadado()
-    {
-        // Arrange
-        var fixture = new ProcessarDoacaoProcessadaHandlerFixture();
-        var campanha = CampanhaFaker.EmAndamento(meta: 1000m);
-        var idDoacao = Guid.NewGuid();
-        fixture.AppDbContextMock
-            .SetupCampanhas([campanha])
-            .SetupArrecadacoesProcessadas([
-                ArrecadacaoProcessadaFaker.Existente(idDoacao, campanha.Id, valor: 200m)
-            ]);
-
-        var command = ProcessarDoacaoProcessadaCommandFaker.Valid(campanha.Id, valor: 200m, idDoacao: idDoacao);
+        var command = ProcessarDoacaoProcessadaCommandFaker.Valid(
+            campanha.Id,
+            valor: 200m,
+            valorTotalArrecadado: 200m);
 
         // Act
         await fixture.Handler.Handle(command, CancellationToken.None);
 
         // Assert
         campanha.ValorArrecadado.ShouldBe(0m);
+        campanha.Status.ShouldBe(StatusCampanha.EmAndamento);
         fixture.AppDbContextMock.VerifyArrecadacaoProcessadaNotAdded();
         fixture.AppDbContextMock.VerifySaveChangesNotCalled();
+        fixture.TransparenciaProjectionWriterMock.VerifyAtualizarStatusCampanhaNotCalled();
     }
 
     [Fact]
-    public async Task Handle_WhenValorAtingeMeta_ThenConcluiCampanha()
+    public async Task Handle_WhenValorTotalAtingeMeta_ThenConcluiCampanhaEAtualizaProjecao()
     {
         // Arrange
         var fixture = new ProcessarDoacaoProcessadaHandlerFixture();
@@ -64,38 +42,45 @@ public class ProcessarDoacaoProcessadaHandlerTest
             .SetupCampanhas([campanha])
             .SetupSaveChangesSuccess();
 
-        var command = ProcessarDoacaoProcessadaCommandFaker.Valid(campanha.Id, valor: 600m);
+        var command = ProcessarDoacaoProcessadaCommandFaker.Valid(
+            campanha.Id,
+            valor: 300m,
+            valorTotalArrecadado: 600m);
 
         // Act
         await fixture.Handler.Handle(command, CancellationToken.None);
 
         // Assert
-        campanha.ValorArrecadado.ShouldBe(600m);
+        campanha.ValorArrecadado.ShouldBe(0m);
         campanha.Status.ShouldBe(StatusCampanha.Concluida);
-        fixture.AppDbContextMock.VerifyArrecadacaoProcessadaAdded();
+        fixture.AppDbContextMock.VerifyArrecadacaoProcessadaNotAdded();
         fixture.AppDbContextMock.VerifySaveChangesCalled();
+        fixture.TransparenciaProjectionWriterMock.VerifyAtualizarStatusCampanhaCalled();
     }
 
     [Fact]
-    public async Task Handle_WhenModoSomentePorDataEMetaAtingida_ThenNaoConclui()
+    public async Task Handle_WhenModoSomentePorDataEMetaAtingida_ThenNaoConcluiNemPersiste()
     {
         // Arrange
         var fixture = new ProcessarDoacaoProcessadaHandlerFixture();
         var campanha = CampanhaFaker.EmAndamentoSomentePorData(meta: 500m);
         fixture.AppDbContextMock
-            .SetupCampanhas([campanha])
-            .SetupSaveChangesSuccess();
+            .SetupCampanhas([campanha]);
 
-        var command = ProcessarDoacaoProcessadaCommandFaker.Valid(campanha.Id, valor: 1000m);
+        var command = ProcessarDoacaoProcessadaCommandFaker.Valid(
+            campanha.Id,
+            valor: 1000m,
+            valorTotalArrecadado: 1000m);
 
         // Act
         await fixture.Handler.Handle(command, CancellationToken.None);
 
         // Assert
-        campanha.ValorArrecadado.ShouldBe(1000m);
+        campanha.ValorArrecadado.ShouldBe(0m);
         campanha.Status.ShouldBe(StatusCampanha.EmAndamento);
-        fixture.AppDbContextMock.VerifyArrecadacaoProcessadaAdded();
-        fixture.AppDbContextMock.VerifySaveChangesCalled();
+        fixture.AppDbContextMock.VerifyArrecadacaoProcessadaNotAdded();
+        fixture.AppDbContextMock.VerifySaveChangesNotCalled();
+        fixture.TransparenciaProjectionWriterMock.VerifyAtualizarStatusCampanhaNotCalled();
     }
 
     [Fact]
@@ -104,10 +89,12 @@ public class ProcessarDoacaoProcessadaHandlerTest
         // Arrange
         var fixture = new ProcessarDoacaoProcessadaHandlerFixture();
         fixture.AppDbContextMock
-            .SetupCampanhas([])
-            .SetupArrecadacoesProcessadas([]);
+            .SetupCampanhas([]);
 
-        var command = ProcessarDoacaoProcessadaCommandFaker.Valid(Guid.NewGuid(), valor: 100m);
+        var command = ProcessarDoacaoProcessadaCommandFaker.Valid(
+            Guid.NewGuid(),
+            valor: 100m,
+            valorTotalArrecadado: 100m);
 
         // Act
         await fixture.Handler.Handle(command, CancellationToken.None);
@@ -115,5 +102,6 @@ public class ProcessarDoacaoProcessadaHandlerTest
         // Assert
         fixture.AppDbContextMock.VerifyArrecadacaoProcessadaNotAdded();
         fixture.AppDbContextMock.VerifySaveChangesNotCalled();
+        fixture.TransparenciaProjectionWriterMock.VerifyAtualizarStatusCampanhaNotCalled();
     }
 }

@@ -2,8 +2,8 @@ using Esperanca.Campanha.Application._Shared;
 using Esperanca.Campanha.Application._Shared.Localization;
 using Esperanca.Campanha.Application._Shared.Results;
 using Esperanca.Campanha.Application.Campanhas._Shared;
+using Esperanca.Campanha.Application.Transparencia._Shared;
 using Esperanca.Campanha.Domain._Shared;
-using Esperanca.Campanha.Domain.Campanhas;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using CampanhaAgg = Esperanca.Campanha.Domain.Campanhas.Campanha;
@@ -15,7 +15,8 @@ public sealed class CriarCampanhaHandler(
     IAppDbContext dbContext,
     ICurrentUser currentUser,
     IDateTimeProvider dateTimeProvider,
-    IAppLocalizer localizer)
+    IAppLocalizer localizer,
+    ITransparenciaProjectionWriter transparenciaProjectionWriter)
     : IRequestHandler<CriarCampanhaCommand, Result<CampanhaDto>>
 {
     public async Task<Result<CampanhaDto>> Handle(CriarCampanhaCommand command, CancellationToken ct)
@@ -41,6 +42,19 @@ public sealed class CriarCampanhaHandler(
 
         dbContext.Set<CampanhaAgg>().Add(campanha);
         await dbContext.SaveChangesAsync(ct);
+
+        await transparenciaProjectionWriter.CriarProjecaoCampanhaAsync(
+            new CriarCampanhaProjectionInput(
+                campanha.Id,
+                campanha.Titulo,
+                campanha.Descricao,
+                campanha.MetaFinanceira,
+                0m,
+                campanha.Status.ToString(),
+                campanha.DataInicio,
+                campanha.DataFim,
+                null),
+            ct);
 
         return Result<CampanhaDto>.Created(CampanhaDto.From(campanha));
     }

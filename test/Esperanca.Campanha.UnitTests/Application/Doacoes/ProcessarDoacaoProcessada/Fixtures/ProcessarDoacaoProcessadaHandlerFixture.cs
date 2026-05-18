@@ -8,15 +8,18 @@ namespace Esperanca.Campanha.UnitTests.Application.Doacoes.ProcessarDoacaoProces
 public class ProcessarDoacaoProcessadaHandlerFixture
 {
     public AppDbContextMock AppDbContextMock { get; }
+    public TransparenciaProjectionWriterMock TransparenciaProjectionWriterMock { get; }
     public ProcessarDoacaoProcessadaHandler Handler { get; }
 
     public ProcessarDoacaoProcessadaHandlerFixture()
     {
         AppDbContextMock = new AppDbContextMock();
+        TransparenciaProjectionWriterMock = new TransparenciaProjectionWriterMock();
         var logger = Substitute.For<ILogger<ProcessarDoacaoProcessadaHandler>>();
 
         Handler = new ProcessarDoacaoProcessadaHandler(
             logger,
-            AppDbContextMock.Instance);
+            AppDbContextMock.Instance,
+            TransparenciaProjectionWriterMock.Instance);
     }
 }

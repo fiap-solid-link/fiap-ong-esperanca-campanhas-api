@@ -10,12 +10,14 @@ public class AtivarCampanhaHandlerFixture
 {
     public AppDbContextMock AppDbContextMock { get; }
     public CurrentUserMock CurrentUserMock { get; }
+    public TransparenciaProjectionWriterMock TransparenciaProjectionWriterMock { get; }
     public AtivarCampanhaHandler Handler { get; }
 
     public AtivarCampanhaHandlerFixture()
     {
         AppDbContextMock = new AppDbContextMock();
         CurrentUserMock = new CurrentUserMock();
+        TransparenciaProjectionWriterMock = new TransparenciaProjectionWriterMock();
 
         var logger = Substitute.For<ILogger<AtivarCampanhaHandler>>();
         var localizer = Substitute.For<IAppLocalizer>();
@@ -24,7 +26,8 @@ public class AtivarCampanhaHandlerFixture
         Handler = new AtivarCampanhaHandler(
             logger,
             AppDbContextMock.Instance,
-            CurrentUserMock.Instance,
-            localizer);
+            CurrentUserMock.Instance,            
+            localizer,
+            TransparenciaProjectionWriterMock.Instance);
     }
 }

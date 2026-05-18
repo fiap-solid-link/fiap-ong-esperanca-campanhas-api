@@ -28,6 +28,7 @@ public class AtivarCampanhaHandlerTest
         result.Dados.ShouldNotBeNull();
         result.Dados.Status.ShouldBe(StatusCampanha.EmAndamento);
         fixture.AppDbContextMock.VerifySaveChangesCalled();
+        fixture.TransparenciaProjectionWriterMock.VerifyAtualizarStatusCampanhaCalled();
     }
 
     [Fact]
@@ -45,6 +46,7 @@ public class AtivarCampanhaHandlerTest
         result.StatusCode.ShouldBe(404);
         result.Erro.ShouldBe(CampanhaErrorCodes.CampanhaNaoEncontrada);
         fixture.AppDbContextMock.VerifySaveChangesNotCalled();
+        fixture.TransparenciaProjectionWriterMock.VerifyAtualizarStatusCampanhaNotCalled();
     }
 
     [Fact]
@@ -63,6 +65,7 @@ public class AtivarCampanhaHandlerTest
         result.Sucesso.ShouldBeFalse();
         result.StatusCode.ShouldBe(404);
         fixture.AppDbContextMock.VerifySaveChangesNotCalled();
+        fixture.TransparenciaProjectionWriterMock.VerifyAtualizarStatusCampanhaNotCalled();
     }
 
     [Fact]
@@ -81,5 +84,6 @@ public class AtivarCampanhaHandlerTest
         result.StatusCode.ShouldBe(400);
         result.Erro.ShouldBe(CampanhaErros.AtivacaoSomenteEmCadastrada);
         fixture.AppDbContextMock.VerifySaveChangesNotCalled();
+        fixture.TransparenciaProjectionWriterMock.VerifyAtualizarStatusCampanhaNotCalled();
     }
 }
