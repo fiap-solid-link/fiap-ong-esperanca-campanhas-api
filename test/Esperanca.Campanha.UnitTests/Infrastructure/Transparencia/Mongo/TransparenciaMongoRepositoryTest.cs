@@ -1,189 +1,364 @@
 using Esperanca.Campanha.Application.Transparencia._Shared;
 using Esperanca.Campanha.Infrastructure.Transparencia.Mongo;
+using Microsoft.Extensions.Options;
+using MongoDB.Bson;
+using MongoDB.Driver;
 using Shouldly;
 
 namespace Esperanca.Campanha.UnitTests.Infrastructure.Transparencia.Mongo;
 
-public class TransparenciaMongoRepositoryTest
+public sealed class TransparenciaMongoRepositoryTest : IAsyncLifetime
 {
-    [Fact]
-    public void MapPainelMacro_WhenDocumentIsNull_ThenReturnsNull()
-    {
-        TransparenciaMongoRepository.MapPainelMacro(null).ShouldBeNull();
-    }
+    private readonly MongoClient _mongoClient = new("mongodb://localhost:27017");
+    private readonly string _databaseName = $"transparencia_tests_{Guid.NewGuid():N}";
+    private readonly TransparenciaMongoOptions _options;
 
-    [Fact]
-    public void MapPainelMacro_WhenDocumentExists_ThenMapsDto()
+    public TransparenciaMongoRepositoryTest()
     {
-        // Arrange
-        var atualizadoEm = new DateTime(2026, 5, 17, 10, 0, 0, DateTimeKind.Utc);
-        var document = new PainelMacroDocument
+        _options = new TransparenciaMongoOptions
         {
-            TotalArrecadado = 1500m,
-            TotalDoacoes = 3,
-            TotalCampanhasAtivas = 2,
-            TotalCampanhasConcluidas = 1,
-            AtualizadoEm = atualizadoEm,
-            TopDoadores =
-            [
-                new TopDoadorDocument
-                {
-                    Apelido = "Doador anônimo",
-                    TotalDoado = 1500m,
-                    QuantidadeDoacoes = 3
-                }
-            ]
+            DatabaseName = _databaseName,
+            PainelMacroCollection = "painel_macro",
+            ListaCampanhasCollection = "lista_campanhas",
+            CampanhaDetalheCollection = "campanha_detalhe"
         };
+    }
 
-        // Act
-        var dto = TransparenciaMongoRepository.MapPainelMacro(document);
+    public Task InitializeAsync() => Task.CompletedTask;
 
-        // Assert
-        dto.ShouldNotBeNull();
-        dto.TotalArrecadado.ShouldBe(1500m);
-        dto.TotalDoacoes.ShouldBe(3);
-        dto.TotalCampanhasAtivas.ShouldBe(2);
-        dto.TotalCampanhasConcluidas.ShouldBe(1);
-        dto.AtualizadoEm.ShouldBe(atualizadoEm);
-        dto.TopDoadores.Single().Apelido.ShouldBe("Doador anônimo");
+    public async Task DisposeAsync()
+    {
+        await _mongoClient.DropDatabaseAsync(_databaseName);
     }
 
     [Fact]
-    public void MapListaCampanhas_ThenOrdersEmAndamentoFirstAndMapsFields()
+    public async Task ObterPainelMacroAsync_DeveRetornarNull_QuandoNaoExistirDocumento()
     {
-        // Arrange
-        var primeira = Guid.NewGuid();
-        var segunda = Guid.NewGuid();
-        var docs = new[]
+        var repository = CriarRepository();
+
+        var resultado = await repository.ObterPainelMacroAsync();
+
+        resultado.ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task ObterPainelMacroAsync_DeveRetornarPainelMaisRecente()
+    {
+        var database = ObterDatabase();
+
+        await database.GetCollection<BsonDocument>(_options.PainelMacroCollection)
+            .InsertManyAsync([
+                CriarPainelMacroDocument(
+                    totalArrecadado: 100m,
+                    totalDoacoes: 1,
+                    totalCampanhasAtivas: 2,
+                    totalCampanhasConcluidas: 3,
+                    atualizadoEm: new DateTime(2026, 1, 1, 10, 0, 0, DateTimeKind.Utc)),
+                CriarPainelMacroDocument(
+                    totalArrecadado: 250m,
+                    totalDoacoes: 5,
+                    totalCampanhasAtivas: 4,
+                    totalCampanhasConcluidas: 6,
+                    atualizadoEm: new DateTime(2026, 1, 2, 10, 0, 0, DateTimeKind.Utc))
+            ]);
+
+        var repository = CriarRepository();
+
+        var resultado = await repository.ObterPainelMacroAsync();
+
+        resultado.ShouldNotBeNull();
+        resultado.TotalArrecadado.ShouldBe(250m);
+        resultado.TotalDoacoes.ShouldBe(5);
+        resultado.TotalCampanhasAtivas.ShouldBe(4);
+        resultado.TotalCampanhasConcluidas.ShouldBe(6);
+        resultado.TopDoadores.Count.ShouldBe(1);
+        resultado.TopDoadores[0].Apelido.ShouldBe("Doador teste");
+        resultado.TopDoadores[0].TotalDoado.ShouldBe(250m);
+        resultado.TopDoadores[0].QuantidadeDoacoes.ShouldBe(5);
+    }
+
+    [Fact]
+    public async Task ListarCampanhasAsync_DeveRetornarCampanhasOrdenadasEMapeadas()
+    {
+        var database = ObterDatabase();
+
+        var campanhaConcluida = Guid.NewGuid();
+        var campanhaEmAndamento = Guid.NewGuid();
+
+        await database.GetCollection<BsonDocument>(_options.ListaCampanhasCollection)
+            .InsertManyAsync([
+                CriarCampanhaListaDocument(
+                    campanhaConcluida,
+                    "Campanha concluída",
+                    1000m,
+                    1000m,
+                    "Concluida",
+                    new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                    new DateTime(2026, 1, 30, 0, 0, 0, DateTimeKind.Utc),
+                    new DateTime(2026, 1, 20, 0, 0, 0, DateTimeKind.Utc)),
+                CriarCampanhaListaDocument(
+                    campanhaEmAndamento,
+                    "Campanha em andamento",
+                    500m,
+                    100m,
+                    "EmAndamento",
+                    new DateTime(2026, 1, 2, 0, 0, 0, DateTimeKind.Utc),
+                    new DateTime(2026, 1, 31, 0, 0, 0, DateTimeKind.Utc),
+                    null)
+            ]);
+
+        var repository = CriarRepository();
+
+        var resultado = await repository.ListarCampanhasAsync();
+
+        resultado.Count.ShouldBe(2);
+        resultado[0].Id.ShouldBe(campanhaEmAndamento);
+        resultado[0].Titulo.ShouldBe("Campanha em andamento");
+        resultado[0].MetaFinanceira.ShouldBe(500m);
+        resultado[0].ValorArrecadado.ShouldBe(100m);
+        resultado[0].Status.ShouldBe("EmAndamento");
+
+        resultado[1].Id.ShouldBe(campanhaConcluida);
+        resultado[1].Status.ShouldBe("Concluida");
+    }
+
+    [Fact]
+    public async Task ObterDetalheCampanhaAsync_DeveRetornarNull_QuandoNaoEncontrarCampanha()
+    {
+        var repository = CriarRepository();
+
+        var resultado = await repository.ObterDetalheCampanhaAsync(Guid.NewGuid());
+
+        resultado.ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task ObterDetalheCampanhaAsync_DeveRetornarDetalheMapeado()
+    {
+        var database = ObterDatabase();
+
+        var idCampanha = Guid.NewGuid();
+
+        await database.GetCollection<BsonDocument>(_options.CampanhaDetalheCollection)
+            .InsertOneAsync(CriarCampanhaDetalheDocument(
+                idCampanha,
+                "Campanha detalhe",
+                "Descrição da campanha",
+                1000m,
+                300m,
+                "EmAndamento",
+                new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                new DateTime(2026, 1, 30, 0, 0, 0, DateTimeKind.Utc),
+                null));
+
+        var repository = CriarRepository();
+
+        var resultado = await repository.ObterDetalheCampanhaAsync(idCampanha);
+
+        resultado.ShouldNotBeNull();
+        resultado.Id.ShouldBe(idCampanha);
+        resultado.Titulo.ShouldBe("Campanha detalhe");
+        resultado.Descricao.ShouldBe("Descrição da campanha");
+        resultado.MetaFinanceira.ShouldBe(1000m);
+        resultado.ValorArrecadado.ShouldBe(300m);
+        resultado.Status.ShouldBe("EmAndamento");
+        resultado.Doacoes.Count.ShouldBe(1);
+        resultado.Doacoes[0].ApelidoDoador.ShouldBe("Doador anônimo");
+        resultado.Doacoes[0].Valor.ShouldBe(300m);
+    }
+
+    //[Fact]
+    //public async Task CriarProjecaoCampanhaAsync_DeveCriarListaEDetalheComValorArrecadadoZerado()
+    //{
+    //    var repository = CriarRepository();
+
+    //    var idCampanha = Guid.NewGuid();
+    //    var dataInicio = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+    //    var dataFim = new DateTime(2026, 1, 30, 0, 0, 0, DateTimeKind.Utc);
+
+    //    var input = new CriarCampanhaProjectionInput(
+    //        idCampanha,
+    //        "Campanha criada",
+    //        "Descrição criada",
+    //        1500m,
+    //        999m,
+    //        "Cadastrada",
+    //        dataInicio,
+    //        dataFim,
+    //        null);
+
+    //    await repository.CriarProjecaoCampanhaAsync(input);
+
+    //    var database = ObterDatabase();
+
+    //    var lista = await database.GetCollection<BsonDocument>(_options.ListaCampanhasCollection)
+    //        .Find(x => x["idCampanha"] == new BsonBinaryData(idCampanha, GuidRepresentation.Standard))
+    //        .FirstOrDefaultAsync();
+
+    //    var detalhe = await database.GetCollection<BsonDocument>(_options.CampanhaDetalheCollection)
+    //        .Find(x => x["idCampanha"] == new BsonBinaryData(idCampanha, GuidRepresentation.Standard))
+    //        .FirstOrDefaultAsync();
+
+    //    lista.ShouldNotBeNull();
+    //    lista["titulo"].AsString.ShouldBe("Campanha criada");
+    //    lista["metaFinanceira"].AsDecimal128.ToD().ShouldBe(1500m);
+    //    lista["valorArrecadado"].AsDecimal128.ToDecimal().ShouldBe(0m);
+    //    lista["status"].AsString.ShouldBe("Cadastrada");
+
+    //    detalhe.ShouldNotBeNull();
+    //    detalhe["titulo"].AsString.ShouldBe("Campanha criada");
+    //    detalhe["descricao"].AsString.ShouldBe("Descrição criada");
+    //    detalhe["valorArrecadado"].AsDecimal128.ToDecimal().ShouldBe(0m);
+    //    detalhe["doacoes"].AsBsonArray.Count.ShouldBe(0);
+    //}
+
+    [Fact]
+    public async Task AtualizarStatusCampanhaAsync_DeveAtualizarListaEDetalhe()
+    {
+        var database = ObterDatabase();
+
+        var idCampanha = Guid.NewGuid();
+        var dataInicio = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        var dataFim = new DateTime(2026, 1, 30, 0, 0, 0, DateTimeKind.Utc);
+        var dataEncerramento = new DateTime(2026, 1, 15, 12, 0, 0, DateTimeKind.Utc);
+
+        await database.GetCollection<BsonDocument>(_options.ListaCampanhasCollection)
+            .InsertOneAsync(CriarCampanhaListaDocument(
+                idCampanha,
+                "Campanha lista",
+                1000m,
+                500m,
+                "EmAndamento",
+                dataInicio,
+                dataFim,
+                null));
+
+        await database.GetCollection<BsonDocument>(_options.CampanhaDetalheCollection)
+            .InsertOneAsync(CriarCampanhaDetalheDocument(
+                idCampanha,
+                "Campanha detalhe",
+                "Descrição",
+                1000m,
+                500m,
+                "EmAndamento",
+                dataInicio,
+                dataFim,
+                null));
+
+        var repository = CriarRepository();
+
+        await repository.AtualizarStatusCampanhaAsync(
+            idCampanha,
+            "Concluida",
+            dataEncerramento);
+
+        var lista = await database.GetCollection<BsonDocument>(_options.ListaCampanhasCollection)
+            .Find(x => x["idCampanha"] == new BsonBinaryData(idCampanha, GuidRepresentation.Standard))
+            .FirstOrDefaultAsync();
+
+        var detalhe = await database.GetCollection<BsonDocument>(_options.CampanhaDetalheCollection)
+            .Find(x => x["idCampanha"] == new BsonBinaryData(idCampanha, GuidRepresentation.Standard))
+            .FirstOrDefaultAsync();
+
+        lista["status"].AsString.ShouldBe("Concluida");
+        lista["dataEncerramento"].ToUniversalTime().ShouldBe(dataEncerramento);
+
+        detalhe["status"].AsString.ShouldBe("Concluida");
+        detalhe["dataEncerramento"].ToUniversalTime().ShouldBe(dataEncerramento);
+    }
+
+    private TransparenciaMongoRepository CriarRepository()
+    {
+        return new TransparenciaMongoRepository(
+            _mongoClient,
+            Options.Create(_options));
+    }
+
+    private IMongoDatabase ObterDatabase()
+    {
+        return _mongoClient.GetDatabase(_databaseName);
+    }
+
+    private static BsonDocument CriarPainelMacroDocument(
+        decimal totalArrecadado,
+        int totalDoacoes,
+        int totalCampanhasAtivas,
+        int totalCampanhasConcluidas,
+        DateTime atualizadoEm)
+    {
+        return new BsonDocument
         {
-            new CampanhaListaDocument
+            ["totalArrecadado"] = new BsonDecimal128(totalArrecadado),
+            ["totalDoacoes"] = totalDoacoes,
+            ["totalCampanhasAtivas"] = totalCampanhasAtivas,
+            ["totalCampanhasConcluidas"] = totalCampanhasConcluidas,
+            ["topDoadores"] = new BsonArray
             {
-                IdCampanha = primeira,
-                Titulo = "Concluida",
-                MetaFinanceira = 100m,
-                ValorArrecadado = 100m,
-                Status = "Concluida",
-                DataInicio = new DateTime(2026, 1, 1),
-                DataFim = new DateTime(2026, 1, 10),
-                DataEncerramento = new DateTime(2026, 1, 9)
+                new BsonDocument
+                {
+                    ["apelido"] = "Doador teste",
+                    ["totalDoado"] = new BsonDecimal128(totalArrecadado),
+                    ["quantidadeDoacoes"] = totalDoacoes
+                }
             },
-            new CampanhaListaDocument
+            ["atualizadoEm"] = atualizadoEm
+        };
+    }
+
+    private static BsonDocument CriarCampanhaListaDocument(
+        Guid idCampanha,
+        string titulo,
+        decimal metaFinanceira,
+        decimal valorArrecadado,
+        string status,
+        DateTime dataInicio,
+        DateTime dataFim,
+        DateTime? dataEncerramento)
+    {
+        return new BsonDocument
+        {
+            ["idCampanha"] = new BsonBinaryData(idCampanha, GuidRepresentation.Standard),
+            ["titulo"] = titulo,
+            ["metaFinanceira"] = new BsonDecimal128(metaFinanceira),
+            ["valorArrecadado"] = new BsonDecimal128(valorArrecadado),
+            ["status"] = status,
+            ["dataInicio"] = dataInicio,
+            ["dataFim"] = dataFim,
+            ["dataEncerramento"] = dataEncerramento is null ? BsonNull.Value : BsonValue.Create(dataEncerramento.Value)
+        };
+    }
+
+    private static BsonDocument CriarCampanhaDetalheDocument(
+        Guid idCampanha,
+        string titulo,
+        string descricao,
+        decimal metaFinanceira,
+        decimal valorArrecadado,
+        string status,
+        DateTime dataInicio,
+        DateTime dataFim,
+        DateTime? dataEncerramento)
+    {
+        return new BsonDocument
+        {
+            ["idCampanha"] = new BsonBinaryData(idCampanha, GuidRepresentation.Standard),
+            ["titulo"] = titulo,
+            ["descricao"] = descricao,
+            ["metaFinanceira"] = new BsonDecimal128(metaFinanceira),
+            ["valorArrecadado"] = new BsonDecimal128(valorArrecadado),
+            ["status"] = status,
+            ["dataInicio"] = dataInicio,
+            ["dataFim"] = dataFim,
+            ["dataEncerramento"] = dataEncerramento is null ? BsonNull.Value : BsonValue.Create(dataEncerramento.Value),
+            ["doacoes"] = new BsonArray
             {
-                IdCampanha = segunda,
-                Titulo = "Em andamento",
-                MetaFinanceira = 200m,
-                ValorArrecadado = 50m,
-                Status = "EmAndamento",
-                DataInicio = new DateTime(2026, 1, 2),
-                DataFim = new DateTime(2026, 1, 20),
-                DataEncerramento = null
+                new BsonDocument
+                {
+                    ["apelidoDoador"] = "Doador anônimo",
+                    ["valor"] = new BsonDecimal128(valorArrecadado),
+                    ["data"] = DateTime.UtcNow
+                }
             }
         };
-
-        // Act
-        var result = TransparenciaMongoRepository.MapListaCampanhas(docs);
-
-        // Assert
-        result.Count.ShouldBe(2);
-        result[0].Id.ShouldBe(segunda);
-        result[0].Status.ShouldBe("EmAndamento");
-        result[1].Id.ShouldBe(primeira);
     }
-
-    [Fact]
-    public void MapDetalheCampanha_WhenDocumentIsNull_ThenReturnsNull()
-    {
-        TransparenciaMongoRepository.MapDetalheCampanha(null).ShouldBeNull();
-    }
-
-    [Fact]
-    public void MapDetalheCampanha_WhenDocumentExists_ThenMapsDto()
-    {
-        // Arrange
-        var idCampanha = Guid.NewGuid();
-        var data = new DateTime(2026, 5, 17, 23, 9, 53, DateTimeKind.Utc);
-        var doc = new CampanhaDetalheDocument
-        {
-            IdCampanha = idCampanha,
-            Titulo = "Inverno",
-            Descricao = "doação de roupas",
-            MetaFinanceira = 1000m,
-            ValorArrecadado = 1500m,
-            Status = "Concluida",
-            DataInicio = data.AddDays(-1),
-            DataFim = data.AddDays(10),
-            DataEncerramento = data,
-            Doacoes =
-            [
-                new DoacaoAnonimaDocument
-                {
-                    ApelidoDoador = "Doador anônimo",
-                    Valor = 900m,
-                    Data = data
-                }
-            ]
-        };
-
-        // Act
-        var dto = TransparenciaMongoRepository.MapDetalheCampanha(doc);
-
-        // Assert
-        dto.ShouldNotBeNull();
-        dto.Id.ShouldBe(idCampanha);
-        dto.Titulo.ShouldBe("Inverno");
-        dto.ValorArrecadado.ShouldBe(1500m);
-        dto.Doacoes.Single().Valor.ShouldBe(900m);
-    }
-
-    [Fact]
-    public void CriarListaDocument_ThenInitializesProjectionWithZeroValorArrecadado()
-    {
-        // Arrange
-        var input = CriarInput();
-
-        // Act
-        var document = TransparenciaMongoRepository.CriarListaDocument(input);
-
-        // Assert
-        document.IdCampanha.ShouldBe(input.IdCampanha);
-        document.Titulo.ShouldBe(input.Titulo);
-        document.MetaFinanceira.ShouldBe(input.MetaFinanceira);
-        document.ValorArrecadado.ShouldBe(0m);
-        document.Status.ShouldBe(input.Status);
-        document.DataInicio.ShouldBe(input.DataInicio);
-        document.DataFim.ShouldBe(input.DataFim);
-        document.DataEncerramento.ShouldBeNull();
-    }
-
-    [Fact]
-    public void CriarDetalheDocument_ThenInitializesProjectionWithZeroValorArrecadadoAndEmptyDoacoes()
-    {
-        // Arrange
-        var input = CriarInput();
-
-        // Act
-        var document = TransparenciaMongoRepository.CriarDetalheDocument(input);
-
-        // Assert
-        document.IdCampanha.ShouldBe(input.IdCampanha);
-        document.Titulo.ShouldBe(input.Titulo);
-        document.Descricao.ShouldBe(input.Descricao);
-        document.MetaFinanceira.ShouldBe(input.MetaFinanceira);
-        document.ValorArrecadado.ShouldBe(0m);
-        document.Status.ShouldBe(input.Status);
-        document.DataEncerramento.ShouldBeNull();
-        document.Doacoes.ShouldBeEmpty();
-    }
-
-    private static CriarCampanhaProjectionInput CriarInput() =>
-        new(
-            Guid.NewGuid(),
-            "Campanha",
-            "Descrição",
-            1000m,
-            999m,
-            "EmAndamento",
-            new DateTime(2026, 5, 1),
-            new DateTime(2026, 5, 30),
-            new DateTime(2026, 5, 20));
 }

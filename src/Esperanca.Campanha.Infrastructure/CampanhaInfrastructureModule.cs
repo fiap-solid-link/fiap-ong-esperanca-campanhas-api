@@ -11,9 +11,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Driver;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Esperanca.Campanha.Infrastructure;
 
+[ExcludeFromCodeCoverage]
 public static class CampanhaInfrastructureModule
 {
     public static IServiceCollection ConfigureServices(IServiceCollection services, IConfiguration configuration)
