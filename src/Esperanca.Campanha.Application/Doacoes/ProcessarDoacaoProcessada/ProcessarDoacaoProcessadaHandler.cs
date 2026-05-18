@@ -40,21 +40,7 @@ public sealed class ProcessarDoacaoProcessadaHandler(
             return Unit.Value;
         }
 
-        try
-        {
-            campanha.ConcluirPorMeta(command.ValorTotalArrecadado);
-        }
-        catch (DomainException ex)
-        {
-            logger.LogWarning(
-                ex,
-                "Erro de domínio ao concluir campanha {IdCampanha} após doação {IdDoacao}: {Codigo}",
-                command.IdCampanha,
-                command.IdDoacao,
-                ex.Codigo);
-
-            throw;
-        }
+        campanha.ConcluirPorMeta(command.ValorTotalArrecadado);
 
         await dbContext.SaveChangesAsync(ct);
 
