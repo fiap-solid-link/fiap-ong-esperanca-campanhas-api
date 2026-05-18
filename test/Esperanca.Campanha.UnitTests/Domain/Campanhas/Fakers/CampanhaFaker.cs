@@ -72,4 +72,35 @@ public static class CampanhaFaker
         campanha.Ativar();
         return campanha;
     }
+
+    public static CampanhaAgg ValidaCadastradaComModo(
+        ModoEncerramento modo,
+        decimal meta = 1000m) =>
+        ValidaComModo(modo, meta: meta);
+
+    public static CampanhaAgg ValidaEmAndamentoComArrecadacao(
+        ModoEncerramento modo,
+        decimal valorArrecadado,
+        decimal meta = 1000m)
+    {
+        var campanha = ValidaEmAndamentoComModo(modo, meta: meta);
+        campanha.RegistrarArrecadacao(valorArrecadado);
+
+        return campanha;
+    }
+
+    public static CampanhaAgg ValidaEmAndamentoPorMetaComArrecadacao(decimal valorArrecadado) =>
+        ValidaEmAndamentoComArrecadacao(
+            ModoEncerramento.PorMeta,
+            valorArrecadado);
+
+    public static CampanhaAgg ValidaEmAndamentoPorDataComArrecadacao(decimal valorArrecadado) =>
+        ValidaEmAndamentoComArrecadacao(
+            ModoEncerramento.PorData,
+            valorArrecadado);
+
+    public static CampanhaAgg ValidaEmAndamentoPorDataOuMetaComArrecadacao(decimal valorArrecadado) =>
+        ValidaEmAndamentoComArrecadacao(
+            ModoEncerramento.PorDataOuMeta,
+            valorArrecadado);
 }

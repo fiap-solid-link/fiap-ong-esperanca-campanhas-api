@@ -458,48 +458,91 @@ public class CampanhaTest
         campanha.Status.ShouldBe(StatusCampanha.Concluida);
     }
 
-    //[Fact]
-    //public void ConcluirPorMeta_WhenModeIsPorData_ThenThrowsDomainException()
-    //{
-    //    // Arrange
-    //    var campanha = CampanhaFaker.ValidaEmAndamentoComModo(ModoEncerramento.PorData, meta: 100m);
-    //    campanha.RegistrarArrecadacao(150m);
+    [Fact]
+    public void ConcluirPorMeta_DeveLancarErro_QuandoCampanhaNaoEstiverEmAndamento()
+    {
+        var campanha = CampanhaFaker.ValidaCadastradaComModo(ModoEncerramento.PorMeta);
 
-    //    // Act
-    //    var act = campanha.ConcluirPorMeta;
+        var exception = Should.Throw<DomainException>(() =>
+            campanha.ConcluirPorMeta());
 
-    //    // Assert
-    //    Should.Throw<DomainException>(act).Codigo.ShouldBe(CampanhaErros.ConclusaoPorMetaExigeModoCompativel);
-    //}
+        exception.Codigo.ShouldBe(CampanhaErros.ConclusaoSomenteEmAndamento);
+    }
 
-    //[Fact]
-    //public void ConcluirPorMeta_WhenMetaNotReached_ThenThrowsDomainException()
-    //{
-    //    // Arrange
-    //    var campanha = CampanhaFaker.ValidaEmAndamentoComModo(ModoEncerramento.PorMeta, meta: 100m);
-    //    campanha.RegistrarArrecadacao(50m);
+    [Fact]
+    public void ConcluirPorMeta_DeveLancarErro_QuandoMetaNaoFoiAtingida()
+    {
+        var campanha = CampanhaFaker.ValidaEmAndamentoComModo(ModoEncerramento.PorMeta);
 
-    //    // Act
-    //    var act = campanha.ConcluirPorMeta;
+        var exception = Should.Throw<DomainException>(() =>
+            campanha.ConcluirPorMeta());
 
-    //    // Assert
-    //    Should.Throw<DomainException>(act).Codigo.ShouldBe(CampanhaErros.ConclusaoPorMetaExigeMetaAtingida);
-    //}
+        exception.Codigo.ShouldBe(CampanhaErros.ConclusaoPorMetaExigeMetaAtingida);
+    }
 
-    //[Fact]
-    //public void ConcluirPorMeta_WhenCadastrada_ThenThrowsDomainException()
-    //{
-    //    // Arrange
-    //    var campanha = CampanhaFaker.Valid();
+    [Fact]
+    public void ConcluirPorMeta_DeveLancarErro_QuandoModoNaoPermiteConclusaoPorMeta()
+    {
+        var campanha = CampanhaFaker.ValidaEmAndamentoPorDataComArrecadacao(1000m);
 
-    //    // Act
-    //    var act = campanha.ConcluirPorMeta;
+        var exception = Should.Throw<DomainException>(() =>
+            campanha.ConcluirPorMeta());
 
-    //    // Assert
-    //    Should.Throw<DomainException>(act).Codigo.ShouldBe(CampanhaErros.ConclusaoSomenteEmAndamento);
-    //}
+        exception.Codigo.ShouldBe(CampanhaErros.ConclusaoPorMetaExigeModoCompativel);
+    }
 
-    // ===== PodeConcluirPorData =====
+    [Fact]
+    public void ConcluirPorMeta_DeveConcluirCampanha_QuandoMetaFoiAtingida()
+    {
+        var campanha = CampanhaFaker.ValidaEmAndamentoPorMetaComArrecadacao(1000m);
+
+        campanha.ConcluirPorMeta();
+
+        campanha.Status.ShouldBe(StatusCampanha.Concluida);
+    }
+
+    [Fact]
+    public void ConcluirPorMetaComValorTotal_DeveLancarErro_QuandoCampanhaNaoEstiverEmAndamento()
+    {
+        var campanha = CampanhaFaker.ValidaCadastradaComModo(ModoEncerramento.PorMeta);
+
+        var exception = Should.Throw<DomainException>(() =>
+            campanha.ConcluirPorMeta(1000m));
+
+        exception.Codigo.ShouldBe(CampanhaErros.ConclusaoSomenteEmAndamento);
+    }
+
+    [Fact]
+    public void ConcluirPorMetaComValorTotal_DeveLancarErro_QuandoValorTotalNaoAtingiuMeta()
+    {
+        var campanha = CampanhaFaker.ValidaEmAndamentoComModo(ModoEncerramento.PorMeta);
+
+        var exception = Should.Throw<DomainException>(() =>
+            campanha.ConcluirPorMeta(999m));
+
+        exception.Codigo.ShouldBe(CampanhaErros.ConclusaoPorMetaExigeMetaAtingida);
+    }
+
+    [Fact]
+    public void ConcluirPorMetaComValorTotal_DeveLancarErro_QuandoModoNaoPermiteConclusaoPorMeta()
+    {
+        var campanha = CampanhaFaker.ValidaEmAndamentoComModo(ModoEncerramento.PorData);
+
+        var exception = Should.Throw<DomainException>(() =>
+            campanha.ConcluirPorMeta(1000m));
+
+        exception.Codigo.ShouldBe(CampanhaErros.ConclusaoPorMetaExigeModoCompativel);
+    }
+
+    [Fact]
+    public void ConcluirPorMetaComValorTotal_DeveConcluirCampanha_QuandoValorTotalAtingiuMeta()
+    {
+        var campanha = CampanhaFaker.ValidaEmAndamentoComModo(ModoEncerramento.PorMeta);
+
+        campanha.ConcluirPorMeta(1000m);
+
+        campanha.Status.ShouldBe(StatusCampanha.Concluida);
+    }
 
     [Fact]
     public void PodeConcluirPorData_WhenEmAndamentoAndDataExpiredAndCompatibleMode_ThenReturnsTrue()
