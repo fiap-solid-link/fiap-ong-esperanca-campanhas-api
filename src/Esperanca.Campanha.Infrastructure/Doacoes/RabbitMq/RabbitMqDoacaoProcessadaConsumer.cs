@@ -88,24 +88,18 @@ public sealed class RabbitMqDoacaoProcessadaConsumer(
 
         var deliveryTag = ea.DeliveryTag;
 
-        var correlationId = ExtractCorrelationId(ea);
+        var correlationId = ExtractCorrelationId(ea.BasicProperties.Headers);
 
         using (LogContext.PushProperty("CorrelationId", correlationId))
         {
             try
             {
-                var evento = JsonSerializer.Deserialize<DoacaoProcessadaEvent>(ea.Body.Span)
-                             ?? throw new InvalidOperationException("DoacaoProcessadaEvent payload vazio.");
+                var command = CriarCommand(ea.Body.Span);
 
                 using var scope = scopeFactory.CreateScope();
                 var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
 
-                await mediator.Send(new ProcessarDoacaoProcessadaCommand(
-                    evento.IdDoacao,
-                    evento.IdCampanha,
-                    evento.Valor,
-                    evento.ValorTotalArrecadado,
-                    evento.DataProcessamento));
+                await mediator.Send(command);
 
                 await _channel.BasicAckAsync(deliveryTag, multiple: false);
             }
@@ -124,10 +118,23 @@ public sealed class RabbitMqDoacaoProcessadaConsumer(
         }
     }
 
-    private static string ExtractCorrelationId(BasicDeliverEventArgs ea)
+    internal static ProcessarDoacaoProcessadaCommand CriarCommand(ReadOnlySpan<byte> payload)
     {
-        if (ea.BasicProperties.Headers is not null
-            && ea.BasicProperties.Headers.TryGetValue("X-Correlation-Id", out var raw)
+        var evento = JsonSerializer.Deserialize<DoacaoProcessadaEvent>(payload)
+                     ?? throw new InvalidOperationException("DoacaoProcessadaEvent payload vazio.");
+
+        return new ProcessarDoacaoProcessadaCommand(
+            evento.IdDoacao,
+            evento.IdCampanha,
+            evento.Valor,
+            evento.ValorTotalArrecadado,
+            evento.DataProcessamento);
+    }
+
+    internal static string ExtractCorrelationId(IDictionary<string, object?>? headers)
+    {
+        if (headers is not null
+            && headers.TryGetValue("X-Correlation-Id", out var raw)
             && raw is byte[] bytes)
         {
             return Encoding.UTF8.GetString(bytes);

@@ -21,17 +21,7 @@ public sealed class TransparenciaMongoRepository(
             .SortByDescending(d => d.AtualizadoEm)
             .FirstOrDefaultAsync(cancellationToken);
 
-        if (doc is null) return null;
-
-        return new PainelMacroDto(
-            doc.TotalArrecadado,
-            doc.TotalDoacoes,
-            doc.TotalCampanhasAtivas,
-            doc.TotalCampanhasConcluidas,
-            doc.TopDoadores
-                .Select(t => new TopDoadorDto(t.Apelido, t.TotalDoado, t.QuantidadeDoacoes))
-                .ToList(),
-            doc.AtualizadoEm);
+        return MapPainelMacro(doc);
     }
 
     public async Task<IReadOnlyList<CampanhaTransparenciaDto>> ListarCampanhasAsync(CancellationToken cancellationToken = default)
@@ -42,19 +32,7 @@ public sealed class TransparenciaMongoRepository(
             .Find(FilterDefinition<CampanhaListaDocument>.Empty)
             .ToListAsync(cancellationToken);
 
-        return docs
-            .OrderBy(d => d.Status == "EmAndamento" ? 0 : 1)
-            .ThenByDescending(d => d.DataInicio)
-            .Select(d => new CampanhaTransparenciaDto(
-                d.IdCampanha,
-                d.Titulo,
-                d.MetaFinanceira,
-                d.ValorArrecadado,
-                d.Status,
-                d.DataInicio,
-                d.DataFim,
-                d.DataEncerramento))
-            .ToList();
+        return MapListaCampanhas(docs);
     }
 
     public async Task<CampanhaDetalheDto?> ObterDetalheCampanhaAsync(Guid idCampanha, CancellationToken cancellationToken = default)
@@ -65,21 +43,7 @@ public sealed class TransparenciaMongoRepository(
             .Find(d => d.IdCampanha == idCampanha)
             .FirstOrDefaultAsync(cancellationToken);
 
-        if (doc is null) return null;
-
-        return new CampanhaDetalheDto(
-            doc.IdCampanha,
-            doc.Titulo,
-            doc.Descricao,
-            doc.MetaFinanceira,
-            doc.ValorArrecadado,
-            doc.Status,
-            doc.DataInicio,
-            doc.DataFim,
-            doc.DataEncerramento,
-            doc.Doacoes
-                .Select(x => new DoacaoAnonimaDto(x.ApelidoDoador, x.Valor, x.Data))
-                .ToList());
+        return MapDetalheCampanha(doc);
     }
 
     public async Task CriarProjecaoCampanhaAsync(CriarCampanhaProjectionInput campanha, CancellationToken cancellationToken = default)
@@ -87,31 +51,8 @@ public sealed class TransparenciaMongoRepository(
         var listaCollection = _database.GetCollection<CampanhaListaDocument>(_opts.ListaCampanhasCollection);
         var detalheCollection = _database.GetCollection<CampanhaDetalheDocument>(_opts.CampanhaDetalheCollection);
 
-        var listaDocument = new CampanhaListaDocument
-        {
-            IdCampanha = campanha.IdCampanha,
-            Titulo = campanha.Titulo,
-            MetaFinanceira = campanha.MetaFinanceira,
-            ValorArrecadado = 0m,
-            Status = campanha.Status.ToString(),
-            DataInicio = campanha.DataInicio,
-            DataFim = campanha.DataFim,
-            DataEncerramento = null
-        };
-
-        var detalheDocument = new CampanhaDetalheDocument
-        {
-            IdCampanha = campanha.IdCampanha,
-            Titulo = campanha.Titulo,
-            Descricao = campanha.Descricao,
-            MetaFinanceira = campanha.MetaFinanceira,
-            ValorArrecadado = 0m,
-            Status = campanha.Status.ToString(),
-            DataInicio = campanha.DataInicio,
-            DataFim = campanha.DataFim,
-            DataEncerramento = null,
-            Doacoes = []
-        };
+        var listaDocument = CriarListaDocument(campanha);
+        var detalheDocument = CriarDetalheDocument(campanha);
 
         await listaCollection.ReplaceOneAsync(
             x => x.IdCampanha == campanha.IdCampanha,
@@ -149,4 +90,82 @@ public sealed class TransparenciaMongoRepository(
             updateDetalhe,
             cancellationToken: cancellationToken);
     }
+
+
+    internal static PainelMacroDto? MapPainelMacro(PainelMacroDocument? doc)
+    {
+        if (doc is null) return null;
+
+        return new PainelMacroDto(
+            doc.TotalArrecadado,
+            doc.TotalDoacoes,
+            doc.TotalCampanhasAtivas,
+            doc.TotalCampanhasConcluidas,
+            doc.TopDoadores
+                .Select(t => new TopDoadorDto(t.Apelido, t.TotalDoado, t.QuantidadeDoacoes))
+                .ToList(),
+            doc.AtualizadoEm);
+    }
+
+    internal static IReadOnlyList<CampanhaTransparenciaDto> MapListaCampanhas(IEnumerable<CampanhaListaDocument> docs) =>
+        docs
+            .OrderBy(d => d.Status == "EmAndamento" ? 0 : 1)
+            .ThenByDescending(d => d.DataInicio)
+            .Select(d => new CampanhaTransparenciaDto(
+                d.IdCampanha,
+                d.Titulo,
+                d.MetaFinanceira,
+                d.ValorArrecadado,
+                d.Status,
+                d.DataInicio,
+                d.DataFim,
+                d.DataEncerramento))
+            .ToList();
+
+    internal static CampanhaDetalheDto? MapDetalheCampanha(CampanhaDetalheDocument? doc)
+    {
+        if (doc is null) return null;
+
+        return new CampanhaDetalheDto(
+            doc.IdCampanha,
+            doc.Titulo,
+            doc.Descricao,
+            doc.MetaFinanceira,
+            doc.ValorArrecadado,
+            doc.Status,
+            doc.DataInicio,
+            doc.DataFim,
+            doc.DataEncerramento,
+            doc.Doacoes
+                .Select(x => new DoacaoAnonimaDto(x.ApelidoDoador, x.Valor, x.Data))
+                .ToList());
+    }
+
+    internal static CampanhaListaDocument CriarListaDocument(CriarCampanhaProjectionInput campanha) =>
+        new()
+        {
+            IdCampanha = campanha.IdCampanha,
+            Titulo = campanha.Titulo,
+            MetaFinanceira = campanha.MetaFinanceira,
+            ValorArrecadado = 0m,
+            Status = campanha.Status,
+            DataInicio = campanha.DataInicio,
+            DataFim = campanha.DataFim,
+            DataEncerramento = null
+        };
+
+    internal static CampanhaDetalheDocument CriarDetalheDocument(CriarCampanhaProjectionInput campanha) =>
+        new()
+        {
+            IdCampanha = campanha.IdCampanha,
+            Titulo = campanha.Titulo,
+            Descricao = campanha.Descricao,
+            MetaFinanceira = campanha.MetaFinanceira,
+            ValorArrecadado = 0m,
+            Status = campanha.Status,
+            DataInicio = campanha.DataInicio,
+            DataFim = campanha.DataFim,
+            DataEncerramento = null,
+            Doacoes = []
+        };
 }

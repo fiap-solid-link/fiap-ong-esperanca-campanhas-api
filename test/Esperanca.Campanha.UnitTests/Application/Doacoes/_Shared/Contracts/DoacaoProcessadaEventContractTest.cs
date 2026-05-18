@@ -25,6 +25,7 @@ public class DoacaoProcessadaEventContractTest
         deserialized.IdDoacao.ShouldBe(Sample.IdDoacao);
         deserialized.IdCampanha.ShouldBe(Sample.IdCampanha);
         deserialized.Valor.ShouldBe(Sample.Valor);
+        deserialized.ValorTotalArrecadado.ShouldBe(Sample.ValorTotalArrecadado);
         deserialized.DataProcessamento.ShouldBe(Sample.DataProcessamento);
     }
 
@@ -37,6 +38,7 @@ public class DoacaoProcessadaEventContractTest
               "IdDoacao": "11111111-1111-1111-1111-111111111111",
               "IdCampanha": "22222222-2222-2222-2222-222222222222",
               "Valor": 123.45,
+              "ValorTotalArrecadado": 123.45,
               "DataProcessamento": "2026-05-08T13:00:00Z"
             }
             """;
@@ -49,6 +51,7 @@ public class DoacaoProcessadaEventContractTest
         deserialized.IdDoacao.ShouldBe(Sample.IdDoacao);
         deserialized.IdCampanha.ShouldBe(Sample.IdCampanha);
         deserialized.Valor.ShouldBe(Sample.Valor);
+        deserialized.ValorTotalArrecadado.ShouldBe(Sample.ValorTotalArrecadado);
         deserialized.DataProcessamento.ToUniversalTime().ShouldBe(Sample.DataProcessamento);
     }
 }

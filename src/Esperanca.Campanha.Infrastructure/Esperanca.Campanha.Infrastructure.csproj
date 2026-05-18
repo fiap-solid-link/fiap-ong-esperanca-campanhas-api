@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <ItemGroup>
         <PackageReference Include="BCrypt.Net-Next" />
@@ -13,5 +13,12 @@
     <ItemGroup>
         <ProjectReference Include="..\Esperanca.Campanha.Application\Esperanca.Campanha.Application.csproj" />
     </ItemGroup>
+
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>Esperanca.Campanha.UnitTests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
 
 </Project>
