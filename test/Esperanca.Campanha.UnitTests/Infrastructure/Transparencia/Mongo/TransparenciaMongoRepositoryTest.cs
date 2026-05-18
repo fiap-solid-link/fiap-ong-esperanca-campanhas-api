@@ -167,50 +167,68 @@ public sealed class TransparenciaMongoRepositoryTest : IAsyncLifetime
         resultado.Doacoes[0].Valor.ShouldBe(300m);
     }
 
-    //[Fact]
-    //public async Task CriarProjecaoCampanhaAsync_DeveCriarListaEDetalheComValorArrecadadoZerado()
-    //{
-    //    var repository = CriarRepository();
+    [Fact]
+    public void CriarListaDocument_DeveMapearInputParaDocumento()
+    {
+        var idCampanha = Guid.NewGuid();
+        var dataInicio = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        var dataFim = new DateTime(2026, 1, 31, 0, 0, 0, DateTimeKind.Utc);
 
-    //    var idCampanha = Guid.NewGuid();
-    //    var dataInicio = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-    //    var dataFim = new DateTime(2026, 1, 30, 0, 0, 0, DateTimeKind.Utc);
+        var input = new CriarCampanhaProjectionInput(
+            idCampanha,
+            "Campanha teste",
+            "Descrição teste",
+            1000m,
+            500m,
+            "Cadastrada",
+            dataInicio,
+            dataFim,
+            DateTime.UtcNow);
 
-    //    var input = new CriarCampanhaProjectionInput(
-    //        idCampanha,
-    //        "Campanha criada",
-    //        "Descrição criada",
-    //        1500m,
-    //        999m,
-    //        "Cadastrada",
-    //        dataInicio,
-    //        dataFim,
-    //        null);
+        var document = TransparenciaMongoRepository.CriarListaDocument(input);
 
-    //    await repository.CriarProjecaoCampanhaAsync(input);
+        document.IdCampanha.ShouldBe(idCampanha);
+        document.Titulo.ShouldBe("Campanha teste");
+        document.MetaFinanceira.ShouldBe(1000m);
+        document.ValorArrecadado.ShouldBe(0m);
+        document.Status.ShouldBe("Cadastrada");
+        document.DataInicio.ShouldBe(dataInicio);
+        document.DataFim.ShouldBe(dataFim);
+        document.DataEncerramento.ShouldBeNull();
+    }
 
-    //    var database = ObterDatabase();
+    [Fact]
+    public void CriarDetalheDocument_DeveMapearInputParaDocumento()
+    {
+        var idCampanha = Guid.NewGuid();
+        var dataInicio = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        var dataFim = new DateTime(2026, 1, 31, 0, 0, 0, DateTimeKind.Utc);
 
-    //    var lista = await database.GetCollection<BsonDocument>(_options.ListaCampanhasCollection)
-    //        .Find(x => x["idCampanha"] == new BsonBinaryData(idCampanha, GuidRepresentation.Standard))
-    //        .FirstOrDefaultAsync();
+        var input = new CriarCampanhaProjectionInput(
+            idCampanha,
+            "Campanha teste",
+            "Descrição teste",
+            1000m,
+            500m,
+            "Cadastrada",
+            dataInicio,
+            dataFim,
+            DateTime.UtcNow);
 
-    //    var detalhe = await database.GetCollection<BsonDocument>(_options.CampanhaDetalheCollection)
-    //        .Find(x => x["idCampanha"] == new BsonBinaryData(idCampanha, GuidRepresentation.Standard))
-    //        .FirstOrDefaultAsync();
+        var document = TransparenciaMongoRepository.CriarDetalheDocument(input);
 
-    //    lista.ShouldNotBeNull();
-    //    lista["titulo"].AsString.ShouldBe("Campanha criada");
-    //    lista["metaFinanceira"].AsDecimal128.ToD().ShouldBe(1500m);
-    //    lista["valorArrecadado"].AsDecimal128.ToDecimal().ShouldBe(0m);
-    //    lista["status"].AsString.ShouldBe("Cadastrada");
-
-    //    detalhe.ShouldNotBeNull();
-    //    detalhe["titulo"].AsString.ShouldBe("Campanha criada");
-    //    detalhe["descricao"].AsString.ShouldBe("Descrição criada");
-    //    detalhe["valorArrecadado"].AsDecimal128.ToDecimal().ShouldBe(0m);
-    //    detalhe["doacoes"].AsBsonArray.Count.ShouldBe(0);
-    //}
+        document.IdCampanha.ShouldBe(idCampanha);
+        document.Titulo.ShouldBe("Campanha teste");
+        document.Descricao.ShouldBe("Descrição teste");
+        document.MetaFinanceira.ShouldBe(1000m);
+        document.ValorArrecadado.ShouldBe(0m);
+        document.Status.ShouldBe("Cadastrada");
+        document.DataInicio.ShouldBe(dataInicio);
+        document.DataFim.ShouldBe(dataFim);
+        document.DataEncerramento.ShouldBeNull();
+        document.Doacoes.ShouldNotBeNull();
+        document.Doacoes.Count.ShouldBe(0);
+    }
 
     [Fact]
     public async Task AtualizarStatusCampanhaAsync_DeveAtualizarListaEDetalhe()
