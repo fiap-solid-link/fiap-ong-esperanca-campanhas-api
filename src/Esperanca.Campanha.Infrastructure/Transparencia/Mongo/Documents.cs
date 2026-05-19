@@ -36,7 +36,8 @@ internal sealed class TopDoadorDocument
     public int QuantidadeDoacoes { get; init; }
 }
 
-internal sealed class CampanhaListaDocument : BaseDocument
+[BsonIgnoreExtraElements]
+internal sealed class CampanhaListaDocument
 {
     [BsonElement("idCampanha")]
     [BsonGuidRepresentation(GuidRepresentation.Standard)]
@@ -64,7 +65,8 @@ internal sealed class CampanhaListaDocument : BaseDocument
     public DateTime? DataEncerramento { get; init; }
 }
 
-internal sealed class CampanhaDetalheDocument : BaseDocument
+[BsonIgnoreExtraElements]
+internal sealed class CampanhaDetalheDocument
 {
     [BsonElement("idCampanha")]
     [BsonGuidRepresentation(GuidRepresentation.Standard)]
