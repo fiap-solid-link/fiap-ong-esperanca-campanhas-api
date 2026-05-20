@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: campanhas-api
+  namespace: esperanca
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: campanhas-api }
+  template:
+    metadata:
+      labels: { app: campanhas-api }
+    spec:
+      containers:
+        - name: campanhas-api
+          image: fzndev/fiap-ong-esperanca-campanhas-api:latest
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef: { name: campanhas-api-config }
+          env:
+            - name: Jwt__SecretKey
+              valueFrom: { secretKeyRef: { name: esperanca-secrets, key: JWT_SECRET_KEY } }
+            - name: RabbitMq__User
+              valueFrom: { secretKeyRef: { name: esperanca-secrets, key: RABBITMQ_USER } }
+            - name: RabbitMq__Password
+              valueFrom: { secretKeyRef: { name: esperanca-secrets, key: RABBITMQ_PASSWORD } }
+            - name: ConnectionStrings__CampanhaDb
+              value: "Host=campanha-postgres;Port=5432;Database=campanha_db;Username=postgres;Password=postgres"
+            - name: ConnectionStrings__DoacoesMongo
+              value: "mongodb://mongo:27017"
+          readinessProbe:
+            httpGet: { path: /health, port: 8080 }
+            initialDelaySeconds: 10
+          livenessProbe:
+            httpGet: { path: /health, port: 8080 }
+            initialDelaySeconds: 20
