@@ -89,6 +89,8 @@ public sealed class TransparenciaMongoRepository(
             x => x.IdCampanha == idCampanha,
             updateDetalhe,
             cancellationToken: cancellationToken);
+
+        await AtualizarTotaisCampanhasPainelAsync(cancellationToken);
     }
 
 
@@ -168,4 +170,25 @@ public sealed class TransparenciaMongoRepository(
             DataEncerramento = null,
             Doacoes = []
         };
+
+    private async Task AtualizarTotaisCampanhasPainelAsync(CancellationToken cancellationToken)
+    {
+        var listaCollection = _database.GetCollection<CampanhaListaDocument>(_opts.ListaCampanhasCollection);
+        var painelCollection = _database.GetCollection<PainelMacroDocument>(_opts.PainelMacroCollection);
+
+        var campanhas = await listaCollection
+            .Find(FilterDefinition<CampanhaListaDocument>.Empty)
+            .ToListAsync(cancellationToken);
+
+        var update = Builders<PainelMacroDocument>.Update
+            .Set(x => x.TotalCampanhasAtivas, campanhas.Count(x => x.Status == "EmAndamento"))
+            .Set(x => x.TotalCampanhasConcluidas, campanhas.Count(x => x.Status == "Concluida"))
+            .Set(x => x.AtualizadoEm, DateTime.UtcNow);
+
+        await painelCollection.UpdateOneAsync(
+            FilterDefinition<PainelMacroDocument>.Empty,
+            update,
+            new UpdateOptions { IsUpsert = true },
+            cancellationToken);
+    }
 }
