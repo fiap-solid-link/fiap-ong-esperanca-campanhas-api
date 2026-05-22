@@ -85,6 +85,3 @@ jobs:
           scanMetadataReportFile: .sonarqube/out/.sonar/report-task.txt
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
-      - name: Build Docker image
-        run: docker build -t esperanca-campanhas-api:ci .
